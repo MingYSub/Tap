@@ -1,0 +1,7 @@
+{
+	"merge": true,
+	"clean_mode": true,
+	"fix_mode": true,
+	"actor": false,
+	"output_format": "txt"
+}
