@@ -3,16 +3,37 @@
 
 我们使用到的测试字幕例有 `为美好的世界献上爆焰！（部分集数）`、 `别当欧尼酱了！（部分集数）`，其中无明显错误。
 
-## 命令行用法
+## 特性
+- 去除位置、颜色等信息
+- 半角片假名转为全角
+- 全角英数转为半角
+- 合并时间重复行
+- 修复 Captain2Ass 可能出现的 Bug（字幕中出现 `[外:xxx]`）
+- 支持输出 txt、ass 和 srt
+- 支持输出说话人
+- 支持去除语气词
+- 批量转换单文件夹下的所有 ass 文件
+
+需要注意，去除语气词可能会导致误删，因此您可根据需要选择开启。
+
+处理一个文件耗时约 0.1s。
+
+## 用法
+### Windows
+可直接将提取出的 ASS 文件拖到脚本上，会自动读取配置文件运行。
+
+### 命令行
 ```
-usage: Tap.py [-h] [--format FORMAT] [--output OUTPUT] [--actor | --no-actor] [--fix | --no-fix] [--clean | --no-clean] [--merge | --no-merge] path
+usage: Tap.py [-h] [--format OUTPUT_FORMAT] [--output OUTPUT] [--actor | --no-actor] [--fix | --no-fix] [--clean | --no-clean]
+              [--merge | --no-merge | --force-merge]
+              path
 
 positional arguments:
   path                  输入路径（支持文件和文件夹）
 
 optional arguments:
-  -h, --help            显示帮助
-  --format FORMAT       指定输出格式
+  --format OUTPUT_FORMAT
+                        指定输出格式
   --output OUTPUT, -o OUTPUT
                         指定输出路径
   --actor, -a           输出说话人
@@ -23,12 +44,13 @@ optional arguments:
   --no-clean, -cn       不删除语气词
   --merge, -m           合并时间重复行
   --no-merge, -mn       不合并时间重复行
+  --force-merge, -mf    强制合并时间重复行
 ```
 
 ## 配置文件
 ```js
 {
-	"merge": true,  // 是否合并时间重复行
+	"merge": "auto",  // 是否合并时间重复行，字符串 "none" "auto" "force"
 	"clean_mode": true,  // 是否删除语气词
 	"fix_mode": true,  // 是否去除中括号
 	"actor": false,  // 是否输出说话人
@@ -66,21 +88,6 @@ Dialogue: 0,0:03:40.61,0:03:44.61,Default,,0,0,0,,{\pos(253,680)\c&H00ffff&}も�
 自分で朝ごはんまで～
 ああ　ああ　もういい　もういいってば～
 ```
-
-## 特性
-- 去除位置、颜色等信息
-- 半角片假名转为全角
-- 全角英数转为半角
-- 合并时间重复行
-- 修复 Captain2Ass 可能出现的 Bug（字幕中出现 `[外:xxx]`）
-- 支持输出 txt、ass 和 srt
-- 支持输出说话人
-- 支持去除语气词
-- 批量转换单文件夹下的所有 ass 文件
-
-需要注意，去除语气词可能会导致误删，因此您可根据需要选择开启。
-
-处理一个文件耗时约 0.1s。
 
 ## TODO 计划
 - 把自定义替换列表写到配置里（~~但不太好实现~~）
