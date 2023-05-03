@@ -1,5 +1,5 @@
 {
-	"merge": true,
+	"merge": "force",
 	"clean_mode": true,
 	"fix_mode": true,
 	"actor": false,
