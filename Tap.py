@@ -1,146 +1,56 @@
+from replace_dict import *
 import re
-import json
 import os
-import sys
 
-SCRIPT_VERSION = 'v0.01'
+SCRIPT_VERSION = 'v0.2.0'
 GITHUB_LINK = 'https://github.com/MingYSub/Tap'
 
-CONFIG_FORCE = 2
 SUPPORTED_EXTENSIONS = ['ass', 'txt', 'srt']
 
-replace_dict = {
-    '\u200e': '',
-    '\\N': '',
-    ' “': '「',
-    '” ': '」',
-    '“': '「',
-    '”': '」',
-    ' ｢': '「',
-    '｣ ': '」',
-    '｢': '「',
-    '｣': '」',
-    '「\u3000': '「',
-    '\u3000」': '」',
-    '!?': '？',
-    '!!': '！',
-    '?': '？',
-    '!': '！',
-    '～！': '～',
-    '～？': '～',
-    ' ': '\u3000',
-    '？\u3000': '？',
-    '！\u3000': '！',
-    '！\u3000': '！',
-    '…｡': '…',
-    '…。': '…',
-    '｡\u3000': '\u3000',
-    '。\u3000': '\u3000',
-    '｡': '\u3000',
-    '。': '\u3000',
-    '《': '',
-    '》': '',
-    ':': '：',
-    '<': '',
-    '>': '',
-    '＜': '',
-    '＞': '',
-    '→': '',
-    '((': '',
-    '))': '',
-    '♬': '',
-    '⚟': '',
-    '📱': '',
-    '🔊': '',
-    '}・': '}',
-    'ね？': 'ね',
-    'かな？': 'かな',
-    'ですか？': 'ですか',
-}
+
+def display_error(error_str):
+    print(error_str)
+    os._exit()
+
+
+def text_process(text):
+    # 处理全半角
+    RAW = '（）！？１２３４５６７８９０ｑｗｅｒｔｙｕｉｏｐａｓｄｆｇｈｊｋｌｚｘｃｖｂｎｍＱＷＥＲＴＹＵＩＯＰＡＳＤＦＧＨＪＫＬＺＸＣＶＢＮＭ'\
+        'ｧｱｨｲｩｳｪｴｫｵｶｷｸｹｺｻｼｽｾｿﾀﾁｯﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓｬﾔｭﾕｮﾖﾗﾘﾙﾚﾛﾜｦﾝｰ･'
+    CONVERTED = '()!?1234567890qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM'\
+        'ァアィイゥウェエォオカキクケコサシスセソタチッツテトナニヌネノハヒフヘホマミムメモャヤュユョヨラリルレロワヲンー・'
+    text = text.translate(str.maketrans(RAW, CONVERTED)).replace('ウﾞ', 'ヴ')
+    text = (''.join(chr(ord(text[i]) + 1) if text[i+1] == 'ﾞ' else chr(ord(text[i]) + 2) if text[i+1] == 'ﾟ' else text[i] for i in range(0, len(text)-1)) +
+            text[-1]).replace('ﾞ', '').replace('ﾟ', '')
+    # 去除中括号
+    if local_config.fix_mode:
+        text = re.sub(r'\[[^]]+\]', '', text)
+    return text
 
 
 class Config:
-    def __init__(self, config_file_path: str = ''):
-        self._config_file_path = config_file_path or (os.path.join(
-            os.path.dirname(os.path.realpath(sys.argv[0])), 'user_config.json'))
-        self.default_config = {
-            'merge': 'auto',
-            'clean_mode': True,
-            'fix_mode': True,
-            'actor': False,
-            'output_format': 'txt',
-        }
-        self._mapping = {
-            'none': 0,
-            'auto': 1,
-            'force': CONFIG_FORCE,
-            0: 'none',
-            1: 'auto',
-            CONFIG_FORCE: 'force',
-        }
-        self.config = self.load_config(self._config_file_path)
-
-    def load_config(self, config_file_path: str = ''):
-        config_file_path = config_file_path or self._config_file_path
-        if os.path.exists(config_file_path):
-            with open(config_file_path, 'r', encoding='utf-8') as f:
-                try:
-                    config = json.load(f)
-                    for i in [k for k in config.keys() if k not in self.default_config.keys()]:
-                        config.pop(i)  # 去除无效配置
-                except json.JSONDecodeError:
-                    config = {}
-        else:
-            config = {}
-
-        for k, v in self.default_config.items():
-            config.setdefault(k, v)
-        config['merge'] = self._mapping[config['merge']
-                                        ] if config['merge'] in self._mapping else 1
-        config['replace_dict'] = replace_dict
-        for k, v in config.items():
+    def __init__(self):
+        import local_config
+        for k, v in local_config.config.items():
             setattr(self, k, v)
-        return config
-
-    def write_config(self, config):
-        config['merge'] = self._mapping[config['merge']]
-        with open(self._config_file_path, "w", encoding='utf-8') as f:
-            json.dump(config, f, indent='\t')
-        config['merge'] = self._mapping[config['merge']]
 
 
 class TapDialogue:
     def __init__(self, dialogue_line: str, subs_parser):
         data = dialogue_line.split(',', 9)
         self.start, self.end = data[1].strip(), data[2].strip()
-        self.text = data[9].strip()
+        self.text = text_process(data[9].strip())
         self.actor = None
         self._speaker_record = subs_parser.speaker_record
-        self._config = subs_parser.config
-        self.text_process()
-
-    def text_process(self):
-        def character_convert(raw_text: str) -> str:  # 处理全半角
-            RAW = '（）！？１２３４５６７８９０ｑｗｅｒｔｙｕｉｏｐａｓｄｆｇｈｊｋｌｚｘｃｖｂｎｍＱＷＥＲＴＹＵＩＯＰＡＳＤＦＧＨＪＫＬＺＸＣＶＢＮＭ'\
-                'ｧｱｨｲｩｳｪｴｫｵｶｷｸｹｺｻｼｽｾｿﾀﾁｯﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓｬﾔｭﾕｮﾖﾗﾘﾙﾚﾛﾜｦﾝｰ･'
-            CONVERTED = '()!?1234567890qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM'\
-                'ァアィイゥウェエォオカキクケコサシスセソタチッツテトナニヌネノハヒフヘホマミムメモャヤュユョヨラリルレロワヲンー・'
-            text = raw_text.translate(str.maketrans(
-                RAW, CONVERTED)).replace('ウﾞ', 'ヴ')
-            return (''.join(chr(ord(text[i]) + 1) if text[i+1] == 'ﾞ' else chr(ord(text[i]) + 2) if text[i+1] == 'ﾟ' else text[i] for i in range(0, len(text)-1)) +
-                    text[-1]).replace('ﾞ', '').replace('ﾟ', '')
-
-        self.text = character_convert(self.text)
-        if self._config['fix_mode']:
-            self.text = re.sub(r'\[[^]]+\]', '', self.text)
-
         self.set_actor()
         self.clean_up()
+        global local_config
 
     def set_actor(self):
         # 说话人的三种标记方式：括号、冒号、颜色
         speaker = None
         text_stripped = custom_replace(re.sub(r'{[^}]+}', '', self.text))
+
         if text_stripped.startswith('(') and ')' in text_stripped:
             speaker = re.findall(re.compile(
                 r"[(](.*?)[)]", re.S), text_stripped)[0]
@@ -158,58 +68,51 @@ class TapDialogue:
 
         self.actor = speaker
 
-    def clean_up(self) -> str:
-        def del_actor(raw_text: str):
-            if '：' in raw_text and raw_text.index('：') < 8:
-                return raw_text[raw_text.index('：')+1:]
-            return raw_text
-
-        def del_trash(raw_text: str) -> str:  # 清理语气词
-            trash = ['', '・', '\u3000', 'あん', 'あああ', 'あわわ', 'アハ', 'アハハ', 'アッハハ', 'ワッハッハ', 'アッハッハハ',
-                     'うあ', 'うぃ', 'うぅ', 'ううぅ', 'うう', 'うぇ', 'うああ', 'うわあ', 'うえぇ', 'うぇえ', 'うえ', 'うわ', 'うわぁ', 'うっわ',
-                     'うえぇ～ん', 'うお', 'エヘ', 'エヘヘ', 'ウフ', 'ウフフ', 'ウフフン', 'ヘッヘッヘッヘッヘ',
-                     'くぅ', 'クフフ', 'くぅ～ん', 'ぐぅ', 'ぐぁ', 'ぐえぇ', 'ぐえ', 'ぐふ', 'ぐぬ', 'ぐぬぅ',
-                     'すぅ', 'ぜぇ', 'ハハ', 'ハハハ',
-                     'フン', 'フフ', 'フッフ', 'フフフ', 'フッフフ', 'フフッフ', 'フフン', 'フフフフ', 'フッフフフフ',
-                     'ハァ', 'ハァハァ', 'はぁ', 'ひぃ', 'ひゃあ', 'ひゃ', 'ひいいぃ',
-                     'ふぁ', 'ふぅ', 'ふえ', 'ふぇ', 'ふう', 'ふぐ', 'ふむ', 'ふふ', 'へぇ',
-                     'ぬおおお', 'ふんふん', 'ふんふん', 'ふんふんふん', 'ふんふんふんふん',
-                     'ワン', 'ワッハッハッハ', 'むふ', 'ふぎゃああ',
-                     'ん', 'んあ', 'んはは', 'んぐぐ', 'んん', 'んんぃ']
-            trash_single = ['う', 'フ', 'く', 'ぶ', 'お', 'あ',
-                            'ふ', 'へ', 'ほ', 'わ', 'ぬ', 'ハ', 'は', 'ひ']
-            # raw_text = re.sub(r'[？！]', lambda x: x.group() + '\u3000', raw_text).strip('\u3000 ')
-            raw_text = custom_replace(
-                raw_text, {'？': '？\u3000', '！': '！\u3000'})
-            elements = raw_text.split('\u3000')
+    def clean_up(self):
+        text = re.sub(r'{[^}]+}', '', self.text)  # 去除tag
+        text = custom_replace(text).strip('\u3000 ')
+        text = re.sub(r'\([^)]+\)', '', text)  # 去除括号
+        # 去除冒号说话人
+        if '：' in text and text.index('：') < 8:
+            text = text[text.index('：')+1:]
+        self.text = text
+        if local_config.clean_mode:
+            trash = ['', '\u3000', 'あぁぁ', 'あああ', 'あわわ', 'あん', 'うあ', 'うああ', 'うぃ', 'うぅ', 'うぅぅ',
+                     'うう', 'ううぅ', 'うぇ', 'うぇえ', 'うえ', 'うえぇ', 'うえぇ～ん', 'うお', 'うっわ', 'うわ',
+                     'うわぁ', 'うわあ', 'くぅ', 'くぅ～ん', 'ぐぁ', 'ぐあ', 'ぐぅ', 'ぐえ', 'ぐえぇ', 'ぐぬ',
+                     'ぐぬぅ', 'ぐふ', 'すぅ', 'ぜぇ', 'ぬぁ', 'ぬおおお', 'はぁ', 'ひぃ', 'ひいいぃ', 'ひゃ',
+                     'ひゃあ', 'ふぁ', 'ふぅ', 'ふう', 'ふぇ', 'ふえ', 'ふぎゃああ', 'ふぐ', 'ふふ', 'ふむ', 'ふんふん',
+                     'ふんふん', 'ふんふんふん', 'ふんふんふんふん', 'へぇ', 'ほ～ぅ', 'むふ', 'わぁぁ', 'ん', 'んあ',
+                     'んぐぐ', 'んはは', 'んん', 'んんぃ', 'アッハッハハ', 'アッハハ', 'アハ', 'アハハ', 'アハハハ',
+                     'ウゥ', 'ウウ', 'ウォー', 'ウオ', 'ウフ', 'ウフフ', 'ウフフン', 'ウワー', 'ウーム', 'ウーン',
+                     'エヘ', 'エヘヘ', 'クフフ', 'ハァ', 'ハァァ', 'ハァハァ', 'ハハ', 'ハハハ', 'ヒィ', 'ヒィィ',
+                     'フゥ', 'フッフ', 'フッフフ', 'フッフフフフ', 'フフ', 'フフッフ', 'フフフ', 'フフフフ', 'フフン',
+                     'フフーン', 'フン', 'フーン', 'ヘッヘッヘッヘッヘ', 'ワッハッハ', 'ワッハッハッハ', 'ワン', '・',
+                     'ぬあ']
+            trash_single = ['あ', 'あぁ', 'う', 'お', 'く', 'ぬ', 'は', 'ぐ',
+                            'ひ', 'ふ', 'ぶ', 'へ', 'ほ', 'わ', 'ウ', 'ハ', 'ヒ', 'フ']
+            text = re.sub(r'[？！]', lambda x: x.group() +
+                          '\u3000', text).strip('\u3000 ')
+            elements = text.split('\u3000')
             test_case = list(element.strip('！？…～っッ') for element in elements)
-
             if all(single in trash or single in trash_single for single in test_case):
-                return ''
+                self.text = ''
+                return
             # 筛选语气词，只删除头尾的
             del_list = [del_i for del_i, case in enumerate(
                 test_case) if case in trash]
             for index in reversed([del_i for i, del_i in enumerate(
                     del_list) if i == del_i or len(del_list)-i == len(elements)-del_i]):
                 elements.pop(index)
-
-            return custom_replace('\u3000'.join(elements), {'？\u3000': '？', '！\u3000': '！'})
-
-        raw_text = re.sub(r'{[^}]+}', '', self.text)  # 去除tag
-        raw_text = custom_replace(raw_text).strip('\u3000 ')
-        raw_text = re.sub(r'\([^)]+\)', '', raw_text)  # 去除括号
-        raw_text = del_actor(raw_text)
-
-        self.text = del_trash(
-            raw_text) if self._config['clean_mode'] else raw_text
+            self.text = re.sub(r'(？|！)\u3000', r'\1', '\u3000'.join(elements))
 
 
 class TapAssParser:
-    def __init__(self, file_path: str, config: dict):
+    def __init__(self, file_path: str):
         self.file_path = file_path
         self.events = []
         self.speaker_record = {}
-        self.config = config
+        global local_config
 
     def parse(self):
         with open(self.file_path, 'r', encoding='utf-8_sig') as ass_file:
@@ -221,7 +124,7 @@ class TapAssParser:
         with open(output_path, 'w', encoding='utf-8') as output_file:
             for line in self.events:
                 output_file.write(
-                    f'[{line.actor}]\t{line.text}\n' if self.config['actor'] else f'{line.text}\n')
+                    f'[{line.actor}]\t{line.text}\n' if local_config.actor else f'{line.text}\n')
 
     def write_ass(self, output_path: str):
         ass_header = ('[Script Info]\n'
@@ -239,40 +142,36 @@ class TapAssParser:
             output_file.write(ass_header)
             for line in self.events:
                 output_file.write(
-                    f'Dialogue: 0,{line.start},{line.end},JP,{line.actor or "" if self.config["actor"] else ""},0,0,0,,{line.text}\n')
+                    f'Dialogue: 0,{line.start},{line.end},JP,{line.actor or "" if local_config.actor else ""},0,0,0,,{line.text}\n')
 
     def write_srt(self, output_path: str):
         with open(output_path, 'w', encoding='utf-8') as output_file:
             for i, line in enumerate(self.events):
                 output_file.write(
                     '%d\n%s --> %s\n%s%s\n\n' % (i+1, f'0{line.start.replace(".", ",")}', f'0{line.end.replace(".",",")}',
-                                                 f'{{{line.actor}}}' if self.config['actor'] and line.actor else '', line.text))
+                                                 f'{{{line.actor}}}' if local_config.actor and line.actor else '', line.text))
 
 
 def custom_replace(raw_text: str, replace_dict: dict = replace_dict) -> str:
     for key, value in replace_dict.items():
         raw_text = raw_text.replace(key, value)
-    regular_ex = {
-        r'・$': '',
-        r'^・': '',
-    }
     for key, value in regular_ex.items():
         raw_text = re.sub(key, value, raw_text)
     return raw_text
 
 
-def process_file(path: str, config: dict):
-    subs = TapAssParser(path, config)
+def process_file(path: str):
+    subs = TapAssParser(path)
     events = subs.parse()
-    if config['merge']:  # 合并
+    if local_config.merge:  # 合并
         del_list = []
         for index, line in enumerate(events):
             if index == len(events)-1:
                 break
             next_line = events[index+1]
-            if config['merge'] != CONFIG_FORCE and (line.actor == None or next_line.actor == None):
+            if local_config.merge != 'force' and (line.actor == None or next_line.actor == None):
                 continue
-            if line.start == next_line.start and line.end == next_line.end and (line.actor == next_line.actor or config['merge'] == CONFIG_FORCE):
+            if line.start == next_line.start and line.end == next_line.end and (line.actor == next_line.actor or local_config.merge == 'force'):
                 events[index+1].text = (line.text + '\u3000' + next_line.text).replace(
                     '？\u3000', '？').replace('！\u3000', '！')
                 del_list.append(index)
@@ -283,7 +182,8 @@ def process_file(path: str, config: dict):
 
 def argparse_config() -> dict:
     from argparse import ArgumentParser
-    json_config = Config()
+    global local_config
+    local_config = Config()
 
     parser = ArgumentParser(
         description=f'Tap {SCRIPT_VERSION} (TV Ass Process) | 处理从 TV 提取的 ASS 字幕')
@@ -297,38 +197,39 @@ def argparse_config() -> dict:
         '--actor', '-a', dest='actor', action='store_true', help='输出说话人')
     group_actor.add_argument(
         '--no-actor', '-an', dest='actor', action='store_false', help='不输出说话人')
-    group_actor.set_defaults(actor=json_config.actor)
+    group_actor.set_defaults(actor=local_config.actor)
 
     group_fix = parser.add_mutually_exclusive_group(required=False)
     group_fix.add_argument('--fix', dest='fix_mode',
                            action='store_true', help='修复 Captain2Ass 可能出现的 Bug（去除中括号）')
     group_fix.add_argument('--no-fix', dest='fix_mode',
                            action='store_false', help='不修复 Captain2Ass 可能出现的 Bug')
-    group_fix.set_defaults(fix_mode=json_config.fix_mode)
+    group_fix.set_defaults(fix_mode=local_config.fix_mode)
 
     group_clean = parser.add_mutually_exclusive_group(required=False)
     group_clean.add_argument(
         '--clean', '-c', dest='clean_mode', action='store_true', help='删除语气词')
     group_clean.add_argument(
         '--no-clean', '-cn', dest='clean_mode', action='store_false', help='不删除语气词')
-    group_clean.set_defaults(clean_mode=json_config.clean_mode)
+    group_clean.set_defaults(clean_mode=local_config.clean_mode)
 
     group_clean = parser.add_mutually_exclusive_group(required=False)
     group_clean.add_argument(
-        '--merge', '-m', dest='merge', action='store_const', const=0, help='合并时间重复行')
+        '--merge', '-m', dest='merge', action='store_const', const='auto', help='合并时间重复行')
     group_clean.add_argument(
-        '--no-merge', '-mn', dest='merge', action='store_const', const=1, help='不合并时间重复行')
+        '--no-merge', '-mn', dest='merge', action='store_const', const='none', help='不合并时间重复行')
     group_clean.add_argument(
-        '--force-merge', '-mf', dest='merge', action='store_const', const=CONFIG_FORCE, help='强制合并时间重复行')
-    group_clean.set_defaults(merge=json_config.merge)
+        '--force-merge', '-mf', dest='merge', action='store_const', const='force', help='强制合并时间重复行')
+    group_clean.set_defaults(merge=local_config.merge)
 
     args = parser.parse_args()
     if os.path.isfile(args.path) and not args.output_format and args.output and args.output.split('.')[-1].lower() in SUPPORTED_EXTENSIONS:
         args.output_format = args.output.split('.')[-1].lower()
     elif not args.output_format:
-        args.output_format = json_config.config['output_format']
+        args.output_format = local_config.output_format
 
-    return {**json_config.config, **vars(args)}
+    for k, v in vars(args).items():
+        setattr(local_config, k, v)
 
 
 def main():
@@ -337,25 +238,27 @@ def main():
             if path.endswith('.ass'):
                 return [path]
             else:
-                raise Exception('所选文件不是 ass 文件。\nNot an .ass file.')
+                display_error('所选文件不是 ass 文件。\nNot an .ass file.')
         elif os.path.isdir(path):
             ass_files = [
                 path+'\\' + file for file in os.listdir(path) if file.endswith('.ass') and not file.endswith('_processed.ass')]
             return ass_files
         else:
-            raise Exception('输入路径的路径无效。\nThe path is not a file or directory.')
+            display_error('输入路径的路径无效。\nThe path is not a file or directory.')
 
-    local_config = argparse_config()
-    output_format = local_config['output_format'].lower().strip('\'" ')
+    argparse_config()
+    for k, v in local_config.__dict__.items():
+        print(k, v)
+    output_format = local_config.output_format.lower().strip('\'" ')
     if output_format not in SUPPORTED_EXTENSIONS:
-        raise Exception(
+        display_error(
             '指定输出格式错误，目前仅支持ass、txt 和 srt。\nUnsupported output format. Only support ass, txt or srt now.')
-    if os.path.isdir(local_config['path']) and local_config['output']:
-        raise Exception('当前仅支持处理单文件时指定输出路径。')
+    if os.path.isdir(local_config.path) and local_config.output:
+        display_error('当前仅支持处理单文件时指定输出路径。')
 
-    for single_file in get_ass_files(local_config['path'].strip('\'" ')):
-        output_file = local_config['output'] or f'{single_file[:-4]}_processed.{output_format}'
-        subs = process_file(single_file, local_config)
+    for single_file in get_ass_files(local_config.path.strip('\'" ')):
+        output_file = local_config.output or f'{single_file[:-4]}_processed.{output_format}'
+        subs = process_file(single_file)
         exec(f'subs.write_{output_format}(output_file)')
         print(f'Done: {single_file}')
 

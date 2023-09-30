@@ -48,16 +48,15 @@ optional arguments:
 ```
 
 ## 配置文件
-```js
-{
-	"merge": "auto",  // 是否合并时间重复行，字符串 "none" "auto" "force"
-	"clean_mode": true,  // 是否删除语气词
-	"fix_mode": true,  // 是否去除中括号
-	"actor": false,  // 是否输出说话人
-	"output_format": "txt"  // 指定输出格式
+```python
+config = {
+    'merge': 'auto',  # 合并时间重复行，可填: 'none' 'auto' 'force'
+    'clean_mode': True,  # 删除语气词
+    'fix_mode': True,  # 去除中括号
+    'actor': False,  # 输出说话人
+    'output_format': 'txt',  # 输出格式，可填: 'txt' 'ass' 'srt'
 }
 ```
-注：编辑配置文件不能加 `//` 等注释。
 
 ## 样例
 ### 原文
@@ -90,8 +89,7 @@ Dialogue: 0,0:03:40.61,0:03:44.61,Default,,0,0,0,,{\pos(253,680)\c&H00ffff&}も�
 ```
 
 ## TODO 计划
-- 把自定义替换列表写到配置里（~~但不太好实现~~）
-- GUI
+- GUI（或许？）
 
 ## 报错
 欢迎提 [Issue](/issues) 或 [PR](/pulls)！
