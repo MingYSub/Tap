@@ -17,6 +17,23 @@ def display_info(info_str):
     print(f'[INFO] {info_str}')
 
 
+def is_whitespace(char: str) -> bool:
+    return char in [' ', '\u3000', '\u2006']
+
+
+def add_space(text) -> str:
+    AN_pattern = r'[\u0021-\u00b6]|[\u00b8-\u00ff]|[\u0370-\u03ff]'
+    CJK_pattern = r'[\u3040-\ufaff]'
+    result = []
+    for char in text:
+        if re.match(CJK_pattern, char) and result and re.match(AN_pattern, result[-1]) and not is_whitespace(result[-1]):
+            result.append('\u2006')
+        elif re.match(AN_pattern, char) and result and re.match(CJK_pattern, result[-1]):
+            result.append('\u2006')
+        result.append(char)
+    return ''.join(result)
+
+
 def text_process(text) -> str:
     # 处理全半角
     RAW = '（）！？１２３４５６７８９０ｑｗｅｒｔｙｕｉｏｐａｓｄｆｇｈｊｋｌｚｘｃｖｂｎｍＱＷＥＲＴＹＵＩＯＰＡＳＤＦＧＨＪＫＬＺＸＣＶＢＮＭ'\
@@ -101,14 +118,17 @@ class TapDialogue:
             test_case = list(element.strip('！？…～っッ') for element in elements)
             if all(single in trash or single in trash_single for single in test_case):
                 self.text = ''
-                return
-            # 筛选语气词，只删除头尾的
-            del_list = [del_i for del_i, case in enumerate(
-                test_case) if case in trash]
-            for index in reversed([del_i for i, del_i in enumerate(
-                    del_list) if i == del_i or len(del_list)-i == len(elements)-del_i]):
-                elements.pop(index)
-            self.text = re.sub(r'(？|！)\u3000', r'\1', '\u3000'.join(elements))
+            else:
+                # 筛选语气词，只删除头尾的
+                del_list = [del_i for del_i, case in enumerate(
+                    test_case) if case in trash]
+                for index in reversed([del_i for i, del_i in enumerate(
+                        del_list) if i == del_i or len(del_list)-i == len(elements)-del_i]):
+                    elements.pop(index)
+                self.text = re.sub(r'(？|！)\u3000', r'\1',
+                                   '\u3000'.join(elements))
+        if local_config.add_spaces:
+            self.text = add_space(self.text)
 
 
 class TapAssParser:
@@ -217,14 +237,21 @@ def argparse_config():
         '--no-clean', '-cn', dest='clean_mode', action='store_false', help='不删除语气词')
     group_clean.set_defaults(clean_mode=local_config.clean_mode)
 
-    group_clean = parser.add_mutually_exclusive_group(required=False)
-    group_clean.add_argument(
+    group_merge = parser.add_mutually_exclusive_group(required=False)
+    group_merge.add_argument(
         '--merge', '-m', dest='merge', action='store_const', const='auto', help='合并时间重复行')
-    group_clean.add_argument(
+    group_merge.add_argument(
         '--no-merge', '-mn', dest='merge', action='store_const', const='none', help='不合并时间重复行')
-    group_clean.add_argument(
+    group_merge.add_argument(
         '--force-merge', '-mf', dest='merge', action='store_const', const='force', help='强制合并时间重复行')
-    group_clean.set_defaults(merge=local_config.merge)
+    group_merge.set_defaults(merge=local_config.merge)
+
+    group_space = parser.add_mutually_exclusive_group(required=False)
+    group_space.add_argument(
+        '--space', '-s', dest='add_space', action='store_true', help='中西文之间添加空格')
+    group_space.add_argument(
+        '--no-space', '-sn', dest='add_space', action='store_false', help='中西文之间不添加空格')
+    group_space.set_defaults(add_space=local_config.add_space)
 
     args = parser.parse_args()
     if os.path.isfile(args.path) and not args.output_format and args.output and args.output.split('.')[-1].lower() in SUPPORTED_EXTENSIONS:
