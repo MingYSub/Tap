@@ -2,7 +2,7 @@ from replace_dict import *
 import re
 import os
 
-SCRIPT_VERSION = 'v0.2.0'
+SCRIPT_VERSION = 'v0.2.1'
 GITHUB_LINK = 'https://github.com/MingYSub/Tap'
 
 SUPPORTED_EXTENSIONS = ['ass', 'txt', 'srt']
@@ -112,8 +112,7 @@ class TapDialogue:
                      'ぬあ']
             trash_single = ['あ', 'あぁ', 'う', 'お', 'く', 'ぬ', 'は', 'ぐ',
                             'ひ', 'ふ', 'ぶ', 'へ', 'ほ', 'わ', 'ウ', 'ハ', 'ヒ', 'フ']
-            text = re.sub(r'[？！]', lambda x: x.group() +
-                          '\u3000', text).strip('\u3000 ')
+            text = re.sub(r'(？！|！？|？|！)', r'\1　', text).strip('\u3000 ')
             elements = text.split('\u3000')
             test_case = list(element.strip('！？…～っッ') for element in elements)
             if all(single in trash or single in trash_single for single in test_case):
@@ -251,7 +250,7 @@ def argparse_config():
         '--space', '-s', dest='add_space', action='store_true', help='中西文之间添加空格')
     group_space.add_argument(
         '--no-space', '-sn', dest='add_space', action='store_false', help='中西文之间不添加空格')
-    group_space.set_defaults(add_space=local_config.add_space)
+    group_space.set_defaults(add_space=local_config.add_spaces)
 
     args = parser.parse_args()
     if os.path.isfile(args.path) and not args.output_format and args.output and args.output.split('.')[-1].lower() in SUPPORTED_EXTENSIONS:
