@@ -13,6 +13,10 @@ def display_error(error_str):
     os._exit()
 
 
+def display_warning(error_str):
+    print(f'[WARNING] {error_str}')
+
+
 def display_info(info_str):
     print(f'[INFO] {info_str}')
 
@@ -285,7 +289,8 @@ def main():
         display_error(
             '指定输出格式错误，目前仅支持ass、txt 和 srt。\nUnsupported output format. Only support ass, txt or srt now.')
     if os.path.isdir(local_config.path) and local_config.output:
-        display_error('当前仅支持处理单文件时指定输出路径。')
+        display_warning('当前仅支持处理单文件时指定输出路径。')
+        local_config.output = None
 
     for single_file in get_ass_files(local_config.path.strip('\'" ')):
         output_file = local_config.output or f'{single_file[:-4]}_processed.{output_format}'
