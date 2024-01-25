@@ -81,7 +81,7 @@ class TapDialogue:
 
         if '\c&H' in self.text:  # 根据颜色对应说话人
             color = self.text[self.text.index(
-                '\c&H')+4:self.text.index('\c&H')+10]
+                '\c&H')+6:self.text.index('\c&H')+12]
             if color not in self._speaker_record:
                 self._speaker_record[color] = speaker or len(
                     self._speaker_record)
