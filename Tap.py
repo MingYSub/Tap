@@ -21,11 +21,10 @@ def display_info(info_str):
     print(f'[INFO] {info_str}')
 
 
-def is_whitespace(char: str) -> bool:
-    return char in [' ', '\u3000', '\u2006']
-
-
 def add_space(text) -> str:
+    def is_whitespace(char: str) -> bool:
+        return char in [' ', '\u3000', '\u2006']
+
     AN_pattern = r'[\u0021-\u00b6]|[\u00b8-\u00ff]|[\u0370-\u03ff]'
     CJK_pattern = r'[\u3040-\ufaff]'
     result = []
@@ -214,9 +213,9 @@ def argparse_config():
 
     parser = ArgumentParser(
         description=f'Tap {SCRIPT_VERSION} (TV Ass Process) | 处理从 TV 提取的 ASS 字幕')
-    parser.add_argument('path', type=str, help='输入路径（支持文件和文件夹）')
+    parser.add_argument('path', type=str, nargs='+', help='输入路径（支持文件和文件夹）')
     parser.add_argument('--format', dest='output_format',
-                        type=str, help='指定输出格式')
+                        type=str, choices=SUPPORTED_EXTENSIONS, help='指定输出格式')
     parser.add_argument('--output', '-o', type=str, help='指定输出路径')
 
     group_actor = parser.add_mutually_exclusive_group(required=False)
@@ -257,7 +256,7 @@ def argparse_config():
     group_space.set_defaults(add_space=local_config.add_spaces)
 
     args = parser.parse_args()
-    if os.path.isfile(args.path) and not args.output_format and args.output and args.output.split('.')[-1].lower() in SUPPORTED_EXTENSIONS:
+    if len(args.path) == 1 and os.path.isfile(args.path[0]) and not args.output_format and args.output and args.output.split('.')[-1].lower() in SUPPORTED_EXTENSIONS:
         args.output_format = args.output.split('.')[-1].lower()
     elif not args.output_format:
         args.output_format = local_config.output_format
@@ -267,32 +266,32 @@ def argparse_config():
 
 
 def main():
-    def get_ass_files(path: str) -> list:
-        if os.path.isfile(path):
-            if path.endswith('.ass'):
-                return [path]
+    def get_ass_files(path: list) -> list:
+        result = []
+        for element in path:
+            if os.path.isfile(element):
+                if element.endswith('.ass'):
+                    result.append(element)
+                else:
+                    display_warning(f'所选文件非 ass 格式: {element}')
+            elif os.path.isdir(element):
+                ass_files = [
+                    element+'\\' + file for file in os.listdir(element) if file.endswith('.ass') and not file.endswith('_processed.ass')]
+                result.append(ass_files)
             else:
-                display_error('所选文件不是 ass 文件。\nNot an .ass file.')
-        elif os.path.isdir(path):
-            ass_files = [
-                path+'\\' + file for file in os.listdir(path) if file.endswith('.ass') and not file.endswith('_processed.ass')]
-            return ass_files
-        else:
-            display_error('输入路径的路径无效。\nThe path is not a file or directory.')
+                display_warning(f'该路径不存在: {element}')
+        return result
 
     argparse_config()
     # display_info('当前配置')
     # for k, v in local_config.__dict__.items():
     #     display_info(f'{k}: {v}')
     output_format = local_config.output_format.lower().strip('\'" ')
-    if output_format not in SUPPORTED_EXTENSIONS:
-        display_error(
-            '指定输出格式错误，目前仅支持ass、txt 和 srt。\nUnsupported output format. Only support ass, txt or srt now.')
-    if os.path.isdir(local_config.path) and local_config.output:
+    if not (len(local_config.path) == 1 and os.path.isfile(local_config.path[0])) and local_config.output:
         display_warning('当前仅支持处理单文件时指定输出路径。')
         local_config.output = None
 
-    for single_file in get_ass_files(local_config.path.strip('\'" ')):
+    for single_file in get_ass_files(local_config.path):
         output_file = local_config.output or f'{single_file[:-4]}_processed.{output_format}'
         subs = process_file(single_file)
         exec(f'subs.write_{output_format}(output_file)')
