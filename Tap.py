@@ -62,6 +62,7 @@ class TapDialogue:
         data = dialogue_line.split(',', 9)
         self.start, self.end = data[1].strip(), data[2].strip()
         self.text = text_process(data[9].strip())
+        self.pos_y = int(re.search(r'\\pos\(\d+,(\d+)\)', self.text).group(1))
         self.actor = None
         self._speaker_record = speaker_record
         self.set_actor()
@@ -134,13 +135,19 @@ class TapAssParser:
     def __init__(self, file_path: str):
         self.file_path = file_path
         self.events = []
+        self.res_y = 0
         self.speaker_record = {}
         global local_config
 
     def parse(self):
         with open(self.file_path, 'r', encoding='utf-8_sig') as ass_file:
-            self.events = [x for x in [TapDialogue(l, self.speaker_record) for l in ass_file if l.startswith(
-                'Dialogue:') and ',Rubi,' not in l] if x.text != '']
+            for line in ass_file:
+                if line.startswith('Dialogue:') and ',Rubi,' not in line:
+                    tmp = TapDialogue(line, self.speaker_record)
+                    if tmp.text != '':
+                        self.events.append(tmp)
+                elif 'ResY:' in line:
+                    self.res_y = int(re.search(r'ResY: ?(\d+)', line).group(1))
         return self.events
 
     def write_txt(self, output_path: str):
@@ -192,12 +199,12 @@ def process_file(path: str):
             if index == len(events)-1:
                 break
             next_line = events[index+1]
-            if local_config.merge != 'force' and (line.actor == None or next_line.actor == None):
-                continue
-            if line.start == next_line.start and line.end == next_line.end and (line.actor == next_line.actor or local_config.merge == 'force'):
-                events[index+1].text = (line.text + '\u3000' + next_line.text).replace(
-                    '？\u3000', '？').replace('！\u3000', '！')
-                del_list.append(index)
+            if line.start == next_line.start and line.end == next_line.end:
+                if local_config.merge == 'force' or (line.actor and line.actor == next_line.actor) or (
+                        not line.actor and not next_line.actor and abs(next_line.pos_y-line.pos_y) <= 60*(subs.res_y/540)):
+                    events[index+1].text = (line.text + '\u3000' + next_line.text).replace(
+                        '？\u3000', '？').replace('！\u3000', '！')
+                    del_list.append(index)
         for index in reversed(del_list):
             events.pop(index)
     return subs
