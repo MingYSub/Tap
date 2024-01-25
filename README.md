@@ -1,23 +1,17 @@
 # Tap (TV ASS Process)
 处理从 TV 提取的 ASS 字幕的脚本。
 
-我们使用到的测试字幕例有 `为美好的世界献上爆焰！（部分集数）`、 `别当欧尼酱了！（部分集数）`，其中无明显错误。
-
 ## 特性
 - 去除位置、颜色等信息
 - 半角片假名转为全角
 - 全角英数转为半角
 - 合并时间重复行
-- 修复 Captain2Ass 可能出现的 Bug（字幕中出现 `[外:xxx]`）
+- 删除外字（`[外:xxx]`，可能误伤极少字）
 - 支持输出 txt、ass 和 srt
 - 支持输出说话人
 - 支持去除语气词
 - 批量转换单文件夹下的所有 ass 文件
 - 中西文之间添加六分之一空格（U+2006）
-
-需要注意，去除语气词可能会误删文本，因此您可根据需要选择开启。
-
-处理一个文件耗时约 0.1s。
 
 ## 用法
 ### Windows
@@ -25,27 +19,26 @@
 
 ### 命令行
 ```
-usage: Tap.py [-h] [--format OUTPUT_FORMAT] [--output OUTPUT] [--actor | --no-actor] [--fix | --no-fix] [--clean | --no-clean]
-              [--merge | --no-merge | --force-merge]
-              path
+usage: Tap.py [-h] [--format {ass,txt,srt}] [--output OUTPUT] [--actor | --no-actor] [--clean | --no-clean] [--merge | --no-merge | --force-merge] [--space | --no-space] path [path ...]
 
 positional arguments:
   path                  输入路径（支持文件和文件夹）
 
 optional arguments:
-  --format OUTPUT_FORMAT
+  -h, --help            show this help message and exit
+  --format {ass,txt,srt}
                         指定输出格式
   --output OUTPUT, -o OUTPUT
                         指定输出路径
   --actor, -a           输出说话人
   --no-actor, -an       不输出说话人
-  --fix                 修复 Captain2Ass 可能出现的 Bug（去除中括号）
-  --no-fix              不修复 Captain2Ass 可能出现的 Bug
   --clean, -c           删除语气词
   --no-clean, -cn       不删除语气词
   --merge, -m           合并时间重复行
   --no-merge, -mn       不合并时间重复行
   --force-merge, -mf    强制合并时间重复行
+  --space, -s           中西文之间添加空格
+  --no-space, -sn       中西文之间不添加空格
 ```
 
 ## 配置文件
@@ -53,7 +46,6 @@ optional arguments:
 config = {
     'merge': 'auto',  # 合并时间重复行，可填: 'none' 'auto' 'force'
     'clean_mode': True,  # 删除语气词
-    'fix_mode': True,  # 去除中括号
     'actor': False,  # 输出说话人
     'output_format': 'txt',  # 输出格式，可填: 'txt' 'ass' 'srt'
     'add_spaces': False  # 中西文之间添加六分之一空格（U+2006）
@@ -63,31 +55,35 @@ config = {
 ## 样例
 ### 原文
 ```
-Dialogue: 0,0:03:15.15,0:03:17.82,Default,,0,0,0,,{\pos(226,680)}(食べる音)\N
-Dialogue: 0,0:03:17.82,0:03:20.32,Default,,0,0,0,,{\pos(520,680)\c&Hffff00&}そ それってつまり…｡\N
-Dialogue: 0,0:03:20.32,0:03:22.82,Default,,0,0,0,,{\pos(226,680)\c&H00ffff&}うん 今から行ってくる｡\N
-Dialogue: 0,0:03:22.82,0:03:26.33,Default,,0,0,0,,{\pos(600,560)\c&Hffff00&}あわわ… わあ…｡\N
-Dialogue: 0,0:03:22.82,0:03:26.33,Default,,0,0,0,,{\pos(360,680)\c&H00ffff&}ふぇ？\N
-Dialogue: 0,0:03:26.33,0:03:29.50,Default,,0,0,0,,{\pos(573,680)\c&Hffff00&}お お兄ちゃんが…｡\N
-Dialogue: 0,0:03:29.50,0:03:31.50,Default,,0,0,0,,{\pos(466,680)\c&Hffff00&}自主的におでかけ…｡\N
-Dialogue: 0,0:03:31.50,0:03:33.83,Default,,0,0,0,,{\pos(493,680)\c&Hffff00&}ぐふっ ううぅ…｡\N
-Dialogue: 0,0:03:33.83,0:03:35.94,Default,,0,0,0,,{\pos(226,680)\c&H00ffff&}うわあ！ 泣いてる！\N
-Dialogue: 0,0:03:35.94,0:03:38.27,Default,,0,0,0,,{\pos(573,680)\c&Hffff00&}しかも早起きして！\N
-Dialogue: 0,0:03:38.27,0:03:40.61,Default,,0,0,0,,{\pos(493,680)\c&Hffff00&}自分で朝ごはんまで～｡\N
-Dialogue: 0,0:03:40.61,0:03:44.61,Default,,0,0,0,,{\pos(226,600)\c&H00ffff&}ああ ああ もういい\N
-Dialogue: 0,0:03:40.61,0:03:44.61,Default,,0,0,0,,{\pos(253,680)\c&H00ffff&}もういいってば～！\N
+Dialogue: 0,0:00:42.38,0:00:45.55,Default,,0000,0000,0000,,{\pos(172,497)\fscx50}（{\fscx100}叫び声{\fscx50}）
+Dialogue: 0,0:00:45.55,0:00:49.88,Default,,0000,0000,0000,,{\pos(252,437)}そんな！
+Dialogue: 0,0:00:45.55,0:00:49.88,Default,,0000,0000,0000,,{\pos(272,497)}魔物が向こうから来るとは！
+Dialogue: 0,0:00:49.88,0:00:52.39,Default,,0000,0000,0000,,{\pos(192,497)}まだ戦闘準備が整ってないのに！
+Dialogue: 0,0:00:52.39,0:00:56.22,Default,,0000,0000,0000,,{\pos(212,407)\c&H0000FFFF}これは{\fscx50}ラッキー{\fscx100}だな{\fscx50}。
+Dialogue: 0,0:00:52.39,0:00:56.22,Default,,0000,0000,0000,,{\pos(612,497)}えっ？
+Dialogue: 0,0:00:56.22,0:01:00.49,Default,,0000,0000,0000,,{\pos(232,497)\c&H0000FFFF}あと半日{\fscx50}　{\fscx100}歩かずにすんだ{\fscx50}。
+Dialogue: 0,0:01:00.49,0:01:03.83,Default,,0000,0000,0000,,{\pos(432,407)\fscx50}グオー{\fscx100}！
+Dialogue: 0,0:01:00.49,0:01:03.83,Default,,0000,0000,0000,,{\pos(212,497)}だめだ{\fscx50}コイツ　{\fscx100}情報より強い！
+Dialogue: 0,0:01:03.83,0:01:06.00,Default,,0000,0000,0000,,{\pos(292,497)}ち{\fscx50}　{\fscx100}近づくこともできない！
+Dialogue: 0,0:01:06.00,0:01:08.17,Default,,0000,0000,0000,,{\pos(272,407)\fscx50}グワーッ{\fscx100}！
+Dialogue: 0,0:01:06.00,0:01:08.17,Default,,0000,0000,0000,,{\pos(372,497)\fscx50}（{\fscx100}兵士たち{\fscx50}）ワーッ{\fscx100}！
+Dialogue: 0,0:01:08.17,0:01:10.67,Default,,0000,0000,0000,,{\pos(512,497)\fscx50}ウワーッ{\fscx100}！
+Dialogue: 0,0:01:10.67,0:01:13.34,Default,,0000,0000,0000,,{\pos(472,497)\fscx50}ウッ{\fscx100}…{\fscx50}　{\fscx100}あっ{\fscx50}。
+Dialogue: 0,0:01:13.34,0:01:16.01,Default,,0000,0000,0000,,{\pos(392,407)\fscx50}ウオォ{\fscx100}…{\fscx50}。
+Dialogue: 0,0:01:13.34,0:01:16.01,Default,,0000,0000,0000,,{\pos(672,497)\fscx50}ウワーッ{\fscx100}！
+Dialogue: 0,0:01:16.01,0:01:23.02,Default,,0000,0000,0000,,{\pos(172,497)}♬～
 ```
+
 ### 处理后文本（默认设置）
 ```
-そ　それってつまり…
-うん　今から行ってくる
-わあ…
-お　お兄ちゃんが…
-自主的におでかけ…
-泣いてる！
-しかも早起きして！
-自分で朝ごはんまで～
-ああ　ああ　もういい　もういいってば～
+そんな！
+魔物が向こうから来るとは！
+まだ戦闘準備が整ってないのに！
+これはラッキーだな
+えっ？
+あと半日　歩かずにすんだ
+だめだコイツ　情報より強い！
+ち　近づくこともできない！
 ```
 
 ## TODO 计划
