@@ -46,9 +46,7 @@ def text_process(text) -> str:
     text = text.translate(str.maketrans(RAW, CONVERTED)).replace('ウﾞ', 'ヴ')
     text = (''.join(chr(ord(text[i]) + 1) if text[i+1] == 'ﾞ' else chr(ord(text[i]) + 2) if text[i+1] == 'ﾟ' else text[i] for i in range(0, len(text)-1)) +
             text[-1]).replace('ﾞ', '').replace('ﾟ', '')
-    # 去除中括号
-    if local_config.fix_mode:
-        text = re.sub(r'\[[^]]+\]', '', text)
+    text = re.sub(r'\[[^]]+\]', '', text)
     return text
 
 
@@ -224,13 +222,6 @@ def argparse_config():
     group_actor.add_argument(
         '--no-actor', '-an', dest='actor', action='store_false', help='不输出说话人')
     group_actor.set_defaults(actor=local_config.actor)
-
-    group_fix = parser.add_mutually_exclusive_group(required=False)
-    group_fix.add_argument('--fix', dest='fix_mode',
-                           action='store_true', help='修复 Captain2Ass 可能出现的 Bug（去除中括号）')
-    group_fix.add_argument('--no-fix', dest='fix_mode',
-                           action='store_false', help='不修复 Captain2Ass 可能出现的 Bug')
-    group_fix.set_defaults(fix_mode=local_config.fix_mode)
 
     group_clean = parser.add_mutually_exclusive_group(required=False)
     group_clean.add_argument(
