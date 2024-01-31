@@ -2,7 +2,7 @@ from replace_dict import *
 import re
 import os
 
-SCRIPT_VERSION = 'v0.2.1'
+SCRIPT_VERSION = 'v0.3.0'
 GITHUB_LINK = 'https://github.com/MingYSub/Tap'
 
 SUPPORTED_EXTENSIONS = ['ass', 'txt', 'srt']
@@ -25,13 +25,13 @@ def add_space(text) -> str:
     def is_whitespace(char: str) -> bool:
         return char in [' ', '\u3000', '\u2006']
 
-    AN_pattern = r'[\u0021-\u00b6]|[\u00b8-\u00ff]|[\u0370-\u03ff]'
-    CJK_pattern = r'[\u3040-\ufaff]'
+    AN_PATTERN = r'[\u0021-\u00b6]|[\u00b8-\u00ff]|[\u0370-\u03ff]'
+    CJK_PATTERN = r'[\u3040-\ufaff]'
     result = []
     for char in text:
-        if re.match(CJK_pattern, char) and result and re.match(AN_pattern, result[-1]) and not is_whitespace(result[-1]):
+        if re.match(CJK_PATTERN, char) and result and re.match(AN_PATTERN, result[-1]) and not is_whitespace(result[-1]):
             result.append('\u2006')
-        elif re.match(AN_pattern, char) and result and re.match(CJK_pattern, result[-1]):
+        elif re.match(AN_PATTERN, char) and result and re.match(CJK_PATTERN, result[-1]):
             result.append('\u2006')
         result.append(char)
     return ''.join(result)
@@ -75,8 +75,7 @@ class TapDialogue:
         text_stripped = custom_replace(re.sub(r'{[^}]+}', '', self.text))
 
         if text_stripped.startswith('(') and ')' in text_stripped:
-            speaker = re.findall(re.compile(
-                r"[(](.*?)[)]", re.S), text_stripped)[0]
+            speaker = re.search(r"[(](.*?)[)]", text_stripped).group(1)
         elif '：' in text_stripped and text_stripped.index('：') < 8:
             speaker = text_stripped[:text_stripped.index('：')]
 
@@ -120,7 +119,6 @@ class TapDialogue:
                 del_list = []
                 for del_i, case in enumerate(test_case):
                     if case in trash or any(re.match(patten, case) for patten in trash_re):
-                        # print(case)
                         del_list.append(del_i)
                 for index in reversed([del_i for i, del_i in enumerate(
                         del_list) if i == del_i or len(del_list)-i == len(elements)-del_i]):
@@ -193,7 +191,7 @@ def custom_replace(raw_text: str) -> str:
 def process_file(path: str):
     subs = TapAssParser(path)
     events = subs.parse()
-    if local_config.merge:  # 合并
+    if local_config.merge != 'none':  # 合并
         del_list = []
         for index, line in enumerate(events):
             if index == len(events)-1:
