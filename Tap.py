@@ -2,7 +2,7 @@ from replace_dict import *
 import re
 import os
 
-SCRIPT_VERSION = 'v0.3.0'
+SCRIPT_VERSION = 'v0.3.1'
 GITHUB_LINK = 'https://github.com/MingYSub/Tap'
 
 SUPPORTED_EXTENSIONS = ['ass', 'txt', 'srt']
@@ -118,7 +118,7 @@ class TapDialogue:
                 # 筛选语气词，只删除头尾的
                 del_list = []
                 for del_i, case in enumerate(test_case):
-                    if case in trash or any(re.match(patten, case) for patten in trash_re):
+                    if case in trash or any(re.fullmatch(pattern, case) for pattern in trash_re):
                         del_list.append(del_i)
                 for index in reversed([del_i for i, del_i in enumerate(
                         del_list) if i == del_i or len(del_list)-i == len(elements)-del_i]):
