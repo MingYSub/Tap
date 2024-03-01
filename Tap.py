@@ -192,11 +192,13 @@ class TapAssParser:
                     break
                 nxt_line = self.events[index+1]
                 if line.start == nxt_line.start and line.end == nxt_line.end:
-                    self.events[index +
-                                1].text = (line.text + '\u3000' + nxt_line.text)
                     if line.actor != nxt_line.actor and line.actor and nxt_line.actor:
                         nxt_line.actor = line.actor + '/' + nxt_line.actor
+                        self.events[index +
+                                    1].text = (line.text + '\n' + nxt_line.text)
                     else:
+                        self.events[index +
+                                    1].text = (line.text + '\u3000' + nxt_line.text)
                         nxt_line.actor = line.actor or nxt_line.actor
                     del_list.append(index)
         elif mode == AUTO_MERGE:
@@ -217,8 +219,9 @@ class TapAssParser:
     def write_txt(self, output_path: str, output_actor: bool = False, ending_char: str = ''):
         with open(output_path, 'w', encoding='utf-8') as output_file:
             for line in self.events:
+                text = line.text.replace('\n', '\u3000')
                 output_file.write(
-                    f'[{line.actor}]\t{line.text}\n' if output_actor else f'{line.text}{ending_char}\n')
+                    f'[{line.actor}]\t{text}\n' if output_actor else f'{text}{ending_char}\n')
 
     def write_ass(self, output_path: str, output_actor: bool = False, ending_char: str = ''):
         ASS_HEADER = ('[Script Info]\n'
@@ -235,8 +238,9 @@ class TapAssParser:
         with open(output_path, 'w', encoding='utf-8_sig') as output_file:
             output_file.write(ASS_HEADER)
             for line in self.events:
+                text = line.text.replace('\n', '\\N')
                 output_file.write(
-                    f'Dialogue: 0,{line.start},{line.end},JP,{line.actor or "" if output_actor else ""},0,0,0,,{line.text}{ending_char}\n')
+                    f'Dialogue: 0,{line.start},{line.end},JP,{line.actor or "" if output_actor else ""},0,0,0,,{text}{ending_char}\n')
 
     def write_srt(self, output_path: str, output_actor: bool = False, ending_char: str = ''):
         with open(output_path, 'w', encoding='utf-8') as output_file:
