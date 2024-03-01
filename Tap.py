@@ -98,7 +98,7 @@ class TapDialogue:
                     r'ヒ[イィ]+', r'[うふ]ふ+', r'[クウグワ][ワオォァーッ]+', r'[うは]わ+ぁ*']
         trash_single = ['あ', 'あぁ', 'う', 'お', 'く', 'ぬ', 'は', 'ぐ',
                         'ひ', 'ふ', 'ぶ', 'へ', 'ほ', 'わ', 'ウ', 'ハ', 'ヒ', 'フ']
-        text = re.sub(r'(？！|！？|？|！)', r'\1　', self.text).strip('\u3000 ')
+        text = re.sub(r'(？！|！？|？|！|\n)', r'\1　', self.text).strip('\u3000 ')
         elements = text.split('\u3000')
         test_case = list(element.strip('！？…～っッ') for element in elements)
         if all(single in trash or single in trash_single for single in test_case):
@@ -112,7 +112,7 @@ class TapDialogue:
             for index in reversed([del_i for i, del_i in enumerate(
                     del_list) if i == del_i or len(del_list)-i == len(elements)-del_i]):
                 elements.pop(index)
-            self.text = re.sub(r'(？|！)\u3000', r'\1',
+            self.text = re.sub(r'(？|！|\n)\u3000', r'\1',
                                '\u3000'.join(elements))
         return self
 
