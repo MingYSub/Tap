@@ -58,7 +58,7 @@ class TapDialogue:
                      text[-1]).replace('ﾞ', '').replace('ﾟ', '')
         return self
 
-    def add_space(self) -> str:
+    def add_space(self):
         def is_whitespace(char: str) -> bool:
             return char in [' ', '\u3000', '\u2006']
 
@@ -71,7 +71,8 @@ class TapDialogue:
             elif re.match(AN_PATTERN, char) and result and re.match(CJK_PATTERN, result[-1]):
                 result.append('\u2006')
             result.append(char)
-        return ''.join(result)
+        self.text = ''.join(result)
+        return self
 
     def clean_up_text(self):
         text = re.sub(r'{[^}]+}', '', self.text)  # 去除tag
