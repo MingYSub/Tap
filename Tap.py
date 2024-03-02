@@ -34,6 +34,8 @@ class Config:
         self.output_format = local_config.config.get('output_format', 'txt')
         self.add_spaces = local_config.config.get('add_spaces', False)
         self.ending_char = local_config.config.get('ending_char', '')
+        self.remove_repeated_syllables = local_config.config.get(
+            'remove_repeated_syllables', '')
         self.output_path = None
 
 
@@ -109,6 +111,53 @@ class TapDialogue:
             self.text = re.sub(r'(？|！|\n)\u3000', r'\1',
                                '\u3000'.join(elements))
         return self
+
+    def remove_repeated_syllables(self):
+        def extract_kana(text):
+            return re.findall(r'[あ-んア-ヴ][ゃゅょァィゥェォャュョ]?', text)
+
+        def has_same_syllables(text):
+            syllables = extract_kana(text)
+            if not syllables:
+                return False
+            if ''.join(syllables) != text:
+                return False
+            first_syllable = syllables[0]
+            for syllable in syllables:
+                if syllable != first_syllable:
+                    return False
+            return True
+
+        def check_repeated_syllable(syllable, text):
+            if text.startswith(syllable):
+                return True
+            if not syllable in repeated_syllables:
+                return False
+            for kanji in repeated_syllables[syllable]:
+                if text.startswith(kanji):
+                    return True
+            return False
+
+        text = re.sub(r'(？！|！？|？|！|\n)', r'\1　', self.text).strip('\u3000 ')
+        cases = text.split('\u3000')
+        repeated_flag = False
+        repeated_syllable = ''
+        for index in range(len(cases)):
+            case = cases[index].rstrip('…っッ')
+            if index > 0:
+                if repeated_flag:
+                    repeated_flag = False
+                    syllables = extract_kana(case)
+                    if syllables and check_repeated_syllable(repeated_syllable, case):
+                        cases[index-1] = cases[index-1].rstrip('…っッ') + '… '
+                    else:
+                        cases[index] = '\u3000'+case
+                else:
+                    cases[index] = '\u3000'+case
+            if has_same_syllables(case):
+                repeated_flag = True
+                repeated_syllable = extract_kana(case)[0]
+        self.text = re.sub(r'(？|！)\u3000', r'\1', ''.join(cases))
 
 
 class TapAssParser:
@@ -262,6 +311,8 @@ def process_file(path: str):
             del_list.append(index)
         elif local_config.add_spaces:
             line.add_space()
+        if local_config.remove_repeated_syllables:
+            line.remove_repeated_syllables()
     for index in reversed(del_list):
         subs.events.pop(index)
     return subs
