@@ -192,20 +192,22 @@ class TapAssParser:
             # 获取具体说话人
             if text_stripped.startswith('(') and ')' in text_stripped:
                 actor = re.search(r"\((.*?)\)", text_stripped).group(1)
+                same_actor_flag = False
             elif '：' in text_stripped and text_stripped.index('：') < 8:
                 actor = text_stripped[:text_stripped.index('：')]
+                same_actor_flag = False
 
             color_match = re.search(
                 r'\\pos[^}]+\\c&?([a-fhA-FH0-9]*?)[\\}]', line.text)
             if color_match:  # 根据颜色对应说话人
                 color = color_match.group(1)
                 if color not in self.actor_record:
-                    self.actor_record[color] = actor or str(none_actor_index)
-                    none_actor_index += 1
+                    self.actor_record[color] = actor or str(
+                        none_actor_index)
                 elif not actor:
                     actor = self.actor_record[color]
             else:  # 根据括号或坐标对应说话人
-                if same_actor_flag:
+                if same_actor_flag or (index > 0 and self.events[index-1].text.endswith(('→', '➡'))):
                     actor = self.events[index-1].actor
                 text_stripped = re.sub(r'{[^}]+}', '', line.text)
                 if text_stripped.startswith(('<', '＜', '《', '｟', '≪')):
@@ -216,12 +218,11 @@ class TapAssParser:
                     last_line = self.events[index-1]
                     if (line.start, line.end) == (last_line.start, last_line.end) and not '\\c&H' in last_line.text and abs(line.pos_y-last_line.pos_y) <= self.y_spacing:
                         actor = last_line.actor
-                    else:
-                        none_actor_index += 1
-                        actor = str(none_actor_index)
-                        none_actor_index -= int(text_stripped.endswith(('→', '➡'))
-                                                and not same_actor_flag)
-            line.actor = str(actor)
+            if actor:
+                line.actor = actor
+            else:
+                line.actor = str(none_actor_index)
+                none_actor_index += 1
 
     def merge_duplicate_rows_by_time(self, mode=AUTO_MERGE):
         if mode == NO_MERGE:
