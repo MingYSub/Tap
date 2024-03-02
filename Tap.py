@@ -7,11 +7,6 @@ GITHUB_LINK = 'https://github.com/MingYSub/Tap'
 
 SUPPORTED_EXTENSIONS = ['ass', 'txt', 'srt']
 
-NO_ACTOR = 0
-BY_COLOR = 1
-BY_COLON = 2
-BY_BRACKETS = 3
-
 NO_MERGE = 'none'
 AUTO_MERGE = 'auto'
 FORCE_MERGE = 'force'
@@ -49,7 +44,6 @@ class TapDialogue:
         self.text = parts[9].strip()
         self.pos_y = int(re.search(r'\\pos\(\d+,(\d+)\)', self.text).group(1))
         self.actor = '-1'
-        self.recording_method = NO_ACTOR
 
     def convert_full_half_width_characters(self):
         RAW = '（）！？１２３４５６７８９０ｑｗｅｒｔｙｕｉｏｐａｓｄｆｇｈｊｋｌｚｘｃｖｂｎｍＱＷＥＲＴＹＵＩＯＰＡＳＤＦＧＨＪＫＬＺＸＣＶＢＮＭ'\
@@ -147,16 +141,13 @@ class TapAssParser:
 
             # 获取具体说话人
             if text_stripped.startswith('(') and ')' in text_stripped:
-                line.recording_method = BY_BRACKETS
                 actor = re.search(r"\((.*?)\)", text_stripped).group(1)
             elif '：' in text_stripped and text_stripped.index('：') < 8:
-                line.recording_method = BY_COLON
                 actor = text_stripped[:text_stripped.index('：')]
 
             color_match = re.search(
-                r'\\pos[^}]+\\c&?([a-fhA-FH0-9]{6,})[^}]+}', line.text)
+                r'\\pos[^}]+\\c&?([a-fhA-FH0-9]*?)[\\}]', line.text)
             if color_match:  # 根据颜色对应说话人
-                line.recording_method = BY_COLOR
                 color = color_match.group(1)
                 if color not in self.actor_record:
                     self.actor_record[color] = actor or str(none_actor_index)
@@ -177,10 +168,10 @@ class TapAssParser:
                         actor = last_line.actor
                     else:
                         none_actor_index += 1
-            if actor:
-                line.actor = actor
-            else:
-                line.actor = str(none_actor_index)
+                        actor = str(none_actor_index)
+                        none_actor_index -= int(text_stripped.endswith(('→', '➡'))
+                                                and not same_actor_flag)
+            line.actor = str(actor)
 
     def merge_duplicate_rows_by_time(self, mode=AUTO_MERGE):
         if mode == NO_MERGE:
