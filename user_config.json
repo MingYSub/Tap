@@ -1,0 +1,9 @@
+{
+    "actor": false,
+    "add_spaces": true,
+    "adjust_repeated_syllables": true,
+    "clean_mode": true,
+    "ending_char": "",
+    "output_format": "txt",
+    "merge": "auto"
+}

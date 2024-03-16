@@ -7,11 +7,13 @@
 - 全角英数转为半角
 - 合并时间重复行
 - 删除外字（`[外:xxx]`，可能误伤极少字）
-- 支持输出 txt、ass 和 srt
-- 支持输出说话人
-- 支持去除语气词
+- 输出 txt、ass 和 srt 格式
+- 输出说话人
+- 去除语气词
 - 批量转换单文件夹下的所有 ass 文件
 - 中西文之间添加六分之一空格（U+2006）
+- 输出时行尾追加字符
+- 整理重复音节
 
 ## 用法
 ### Windows
@@ -19,7 +21,13 @@
 
 ### 命令行
 ```
-usage: Tap.py [-h] [--format {ass,txt,srt}] [--output OUTPUT] [--actor | --no-actor] [--clean | --no-clean] [--merge | --no-merge | --force-merge] [--space | --no-space] path [path ...]
+usage: Tap.py [-h] [--format {ass,txt,srt}] [--output OUTPUT_PATH]
+              [--actor | --no-actor]
+              [--clean | --no-clean]
+              [--merge | --no-merge | --force-merge]
+              [--space | --no-space]
+              [--adjust-repeated-syllables | --no-adjust-repeated-syllables]
+              path [path ...]
 
 positional arguments:
   path                  输入路径（支持文件和文件夹）
@@ -28,7 +36,7 @@ optional arguments:
   -h, --help            show this help message and exit
   --format {ass,txt,srt}
                         指定输出格式
-  --output OUTPUT, -o OUTPUT
+  --output OUTPUT_PATH, -o OUTPUT_PATH
                         指定输出路径
   --actor, -a           输出说话人
   --no-actor, -an       不输出说话人
@@ -39,16 +47,23 @@ optional arguments:
   --force-merge, -mf    强制合并时间重复行
   --space, -s           中西文之间添加空格
   --no-space, -sn       中西文之间不添加空格
+  --adjust-repeated-syllables, -rs
+                        整理重复音节
+  --no-adjust-repeated-syllables, -rsn
+                        不整理重复音节
 ```
 
 ## 配置文件
-```python
-config = {
-    'merge': 'auto',  # 合并时间重复行，可填: 'none' 'auto' 'force'
-    'clean_mode': True,  # 删除语气词
-    'actor': False,  # 输出说话人
-    'output_format': 'txt',  # 输出格式，可填: 'txt' 'ass' 'srt'
-    'add_spaces': False  # 中西文之间添加六分之一空格（U+2006）
+以下为默认配置文件的注释，请不要向文件添加注释。
+```json
+{
+    "actor": false,  // 输出说话人，可填: true false，注意没有引号
+    "add_spaces": true,  // 中西文之间添加六分之一空格（U+2006），可填: true false
+    "adjust_repeated_syllables": true,  // 整理重复音节，可填: true false
+    "clean_mode": true,  // 删除语气词，可填: true false
+    "ending_char": "",  // 输出时行尾添加的字符，可填字符（串）
+    "merge": "auto",  // 合并时间重复行，可填: "none" "auto" "force"
+    "output_format": "txt"  // 输出格式，可填: 'txt' 'ass' 'srt'
 }
 ```
 
@@ -83,7 +98,7 @@ Dialogue: 0,0:01:16.01,0:01:23.02,Default,,0000,0000,0000,,{\pos(172,497)}♬～
 えっ？
 あと半日　歩かずにすんだ
 だめだコイツ　情報より強い！
-ち　近づくこともできない！
+ち… 近づくこともできない！
 ```
 
 ## TODO 计划
