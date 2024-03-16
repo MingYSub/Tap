@@ -55,7 +55,7 @@ optional arguments:
 
 ## 配置文件
 以下为默认配置文件的注释，请不要向文件添加注释。
-```json
+```
 {
     "actor": false,  // 输出说话人，可填: true false，注意没有引号
     "add_spaces": true,  // 中西文之间添加六分之一空格（U+2006），可填: true false
