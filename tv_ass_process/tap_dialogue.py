@@ -132,9 +132,9 @@ class TapDialogue:
                     if check_repeated_syllable(repeated_syllable, case):
                         cases[index-1] = cases[index-1].rstrip('…っッ') + '… '
                     else:
-                        cases[index] = '\u3000'+case
+                        cases[index] = '\u3000'+cases[index]
                 else:
-                    cases[index] = '\u3000'+case
+                    cases[index] = '\u3000'+cases[index]
 
             repeated_syllable = has_same_syllables(case)
 
