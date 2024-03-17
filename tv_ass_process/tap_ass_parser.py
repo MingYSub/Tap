@@ -69,14 +69,17 @@ class TapAssParser:
                 actor = text_stripped[:text_stripped.index('：')]
                 same_actor_flag = False
 
-            if ')\\c&' in line.text:  # Set the speaker based on the color
-                color_index = line.text.find(')\\c&')
-                color = line.text[color_index+5:color_index+5+8]
-                if color not in self.actor_record:
-                    self.actor_record[color] = actor or str(
-                        none_actor_index)
-                elif not actor:
-                    actor = self.actor_record[color]
+            if '\\c&' in line.text:  # Set the speaker based on the color
+                text = re.sub(
+                    r'{\\c&[0-9a-fhA-FH][^}]*}[　 ]*{\\c&H00FFFFFF[^}]*}', '', line.text)
+                if '\\c&' in text:
+                    color_index = line.text.find('\\c&')
+                    color = line.text[color_index+4:color_index+4+8]
+                    if color not in self.actor_record:
+                        self.actor_record[color] = actor or str(
+                            none_actor_index)
+                    elif not actor:
+                        actor = self.actor_record[color]
             else:  # Set the speaker based on parentheses or coordinates
                 if same_actor_flag or index > 0 and self.events[index-1].text.endswith(('→', '➡')):
                     actor = self.events[index-1].actor
