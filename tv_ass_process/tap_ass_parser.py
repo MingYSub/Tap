@@ -47,9 +47,11 @@ class TapAssParser:
                 continue
 
             if user_config.add_spaces:
-                text = add_space(text)
+                text = add_spaces(text)
             if user_config.adjust_repeated_syllables:
                 text = adjust_repeated_syllables(text)
+
+            text = replace_spaces_between_AN(text)
 
             line.text = text
 

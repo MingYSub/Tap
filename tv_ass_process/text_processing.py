@@ -29,7 +29,17 @@ def check_AN_char(text) -> bool:
     return all(any(start <= ord(char) <= end for start, end in AN_RANGES) for char in text)
 
 
-def add_space(text, whitespace='\u2006') -> str:
+def replace_spaces_between_AN(text) -> str:
+    words = text.split('\u3000')
+
+    for i in range(1, len(words)):
+        words[i-1] += ' ' if check_AN_char(
+            words[i-1]) and check_AN_char(words[i]) else '\u3000'
+
+    return ''.join(words)
+
+
+def add_spaces(text, whitespace='\u2006') -> str:
     result = []
     last_char_type = 'NULL'
     for char in text:
