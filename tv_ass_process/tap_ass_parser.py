@@ -2,6 +2,7 @@ import re
 from .constants import ASS_HEADER, NO_MERGE, AUTO_MERGE, FORCE_MERGE
 from .config import Config
 from .tap_dialogue import TapDialogue
+from .text_processing import *
 
 
 class TapAssParser:
@@ -22,8 +23,8 @@ class TapAssParser:
         with open(self.file_path, 'r', encoding='utf-8_sig') as ass_file:
             for line in ass_file:
                 if line.startswith('Dialogue:') and ',Rubi,' not in line:
-                    event = TapDialogue(
-                        line).convert_full_half_width_characters()
+                    event = TapDialogue(line)
+                    event.text = convert_full_half_width_characters(event.text)
                     self.events.append(event)
                 elif 'ResY:' in line:
                     res_y = int(re.search(r'ResY: ?(\d+)', line).group(1))
@@ -37,17 +38,20 @@ class TapAssParser:
         del_list = []
 
         for index, line in self:
-            line.text = line.clean_up_text().text_stripped
+            line.text = clean_up_text(line.text)
+            text = line.text_stripped
             if user_config.clean_mode:
-                line.clean_trash()
-            if line.text == '':
+                text = clean_trash(text)
+            if text == '':
                 del_list.append(index)
                 continue
 
             if user_config.add_spaces:
-                line.add_space()
+                text = add_space(text)
             if user_config.adjust_repeated_syllables:
-                line.adjust_repeated_syllables()
+                text = adjust_repeated_syllables(text)
+
+            line.text = text
 
         self.remove_lines(del_list)
         return self
