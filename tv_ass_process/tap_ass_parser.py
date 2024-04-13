@@ -1,4 +1,5 @@
 import re
+import os
 from .constants import ASS_HEADER, NO_MERGE, AUTO_MERGE, FORCE_MERGE
 from .config import Config
 from .tap_dialogue import TapDialogue
@@ -6,9 +7,20 @@ from .text_processing import *
 
 
 class TapAssParser:
-    def __init__(self, file_path: str):
-        self.file_path = file_path
+    def __init__(self, doc):
         self.actor_record = {}
+        self.events = []
+        self.y_spacing = 0
+
+        import io
+        if isinstance(doc, io.IOBase):
+            self.parse_file(doc)
+        elif isinstance(doc, str):
+            if os.path.isfile(doc):
+                with open(doc, 'r', encoding='utf-8_sig') as fp:
+                    self.parse_file(fp)
+            else:
+                self.parse_str(doc.split('\n'))
 
     def __iter__(self):
         return self.iterate_events()
@@ -17,20 +29,18 @@ class TapAssParser:
         for index, event in enumerate(self.events):
             yield index, event
 
-    def parse(self) -> 'TapAssParser':
-        self.events = []
-        self.y_spacing = 0
-        with open(self.file_path, 'r', encoding='utf-8_sig') as ass_file:
-            for line in ass_file:
-                if line.startswith('Dialogue:') and ',Rubi,' not in line:
-                    event = TapDialogue(line)
-                    event.text = convert_full_half_width_characters(event.text)
-                    self.events.append(event)
-                elif 'ResY:' in line:
-                    res_y = int(re.search(r'ResY: ?(\d+)', line).group(1))
-                    self.y_spacing = int(60*(res_y/540))
+    def parse_file(self, fp):
+        self.parse_str(fp.readlines())
 
-        return self
+    def parse_str(self, lines):
+        for line in lines:
+            if line.startswith('Dialogue:') and ',Rubi,' not in line:
+                event = TapDialogue(line)
+                event.text = convert_full_half_width_characters(event.text)
+                self.events.append(event)
+            elif 'ResY:' in line:
+                res_y = int(re.search(r'ResY: ?(\d+)', line).group(1))
+                self.y_spacing = int(60*(res_y/540))
 
     def process(self, user_config: Config) -> 'TapAssParser':
         self.set_actor()

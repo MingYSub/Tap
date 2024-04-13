@@ -138,7 +138,7 @@ def main():
                 :-4] + f'_processed.{output_format}'
         else:
             output_file = user_config.output_path or f'{single_file[:-4]}_processed.{output_format}'
-        subs = TapAssParser(single_file).parse().process(user_config)
+        subs = TapAssParser(single_file).process(user_config)
         for _, line in subs:
             for old, new in CUSTOM_REPLACEMENTS.items():
                 line.text = line.replace(old, new)
