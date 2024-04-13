@@ -105,7 +105,7 @@ def get_ass_files(path):
 def main():
     argparse_config()
     output_format = user_config.output_format
-    output_dir_flag = False
+    output_dir = None
     ass_files = get_ass_files(user_config.path)
     if len(ass_files) > 1 and user_config.output_path:
         parts = os.path.splitext(user_config.output_path)
@@ -114,7 +114,6 @@ def main():
             user_config.output_path = None
         else:
             os.makedirs(user_config.output_path, exist_ok=True)
-            output_dir_flag = True
             output_dir = parts[0]
     elif len(ass_files) == 1 and user_config.output_path:
         parts = os.path.splitext(user_config.output_path)
@@ -131,14 +130,15 @@ def main():
                 user_config.output_path = parts[0]+user_config.output_format
         else:
             os.makedirs(user_config.output_path, exist_ok=True)
-            output_dir_flag = True
             output_dir = parts[0]
 
     logger.info('当前配置')
     for k, v in vars(user_config).items():
+        if k == 'path':
+            continue
         logger.info(f'\t{k}: {v}')
     for single_file in ass_files:
-        if output_dir_flag:
+        if output_dir is not None:
             output_file = os.path.join(output_dir, os.path.basename(single_file))[
                 :-4] + f'_processed.{output_format}'
         else:

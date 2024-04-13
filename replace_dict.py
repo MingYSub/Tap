@@ -5,6 +5,7 @@ CUSTOM_REPLACEMENTS = {
 
 # 正则表达式替换
 REGULAR_REPLACEMENTS = {
-    r'・$': '',
-    r'^・': '',
+    '・$': '',
+    '^・': '',
+    '^何$': 'なに',
 }

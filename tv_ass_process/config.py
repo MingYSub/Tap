@@ -14,16 +14,7 @@ class Config:
     def init_from_file(self, config_path: str):
         with open(config_path, 'r') as file:
             local_config = json.load(file)
-
-        self.merge = local_config.get('merge', 'auto')
-        self.clean_mode = local_config.get('clean_mode', True)
-        self.actor = local_config.get('actor', False)
-        self.output_format = local_config.get('output_format', 'txt')
-        self.add_spaces = local_config.get('add_spaces', False)
-        self.ending_char = local_config.get('ending_char', '')
-        self.adjust_repeated_syllables = local_config.get(
-            'adjust_repeated_syllables', True)
-        self.output_path = None
+        self.init_from_dict(local_config)
 
     def init_from_dict(self, user_config: dict):
         self.merge = user_config.get('merge', 'auto')

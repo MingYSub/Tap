@@ -29,7 +29,7 @@ class TapAssParser:
             else:
                 self.parse_str(doc)
         else:
-            raise ValueError('doc must be a file or a string')
+            raise TypeError('doc must be a file or a string')
 
     def __iter__(self):
         return self.iterate_events()
