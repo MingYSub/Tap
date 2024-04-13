@@ -69,8 +69,8 @@ class TapAssParser:
         return self
 
     def set_actor(self) -> 'TapAssParser':
-        INNER_ACTIVITY_START_SYMBOLS = ('<', '＜', '《', '｟', '≪')
-        INNER_ACTIVITY_END_SYMBOLS = ('>', '＞', '》', '｠', '≫')
+        INNER_ACTIVITY_START_SYMBOLS = ('<', '＜', '《', '｟', '≪', '〈')
+        INNER_ACTIVITY_END_SYMBOLS = ('>', '＞', '》', '｠', '≫', '〉')
 
         none_actor_index = 1
         same_actor_flag = False

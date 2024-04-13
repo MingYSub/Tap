@@ -5,10 +5,14 @@ CJK_RANGES = [(0x3040, 0xfaff)]
 
 
 def convert_full_half_width_characters(text) -> str:
-    RAW = '（）！？１２３４５６７８９０ｑｗｅｒｔｙｕｉｏｐａｓｄｆｇｈｊｋｌｚｘｃｖｂｎｍＱＷＥＲＴＹＵＩＯＰＡＳＤＦＧＨＪＫＬＺＸＣＶＢＮＭ'\
-        'ｧｱｨｲｩｳｪｴｫｵｶｷｸｹｺｻｼｽｾｿﾀﾁｯﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓｬﾔｭﾕｮﾖﾗﾘﾙﾚﾛﾜｦﾝｰ･'
-    CONVERTED = '()!?1234567890qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM'\
-        'ァアィイゥウェエォオカキクケコサシスセソタチッツテトナニヌネノハヒフヘホマミムメモャヤュユョヨラリルレロワヲンー・'
+    RAW = '１２３４５６７８９０ｑｗｅｒｔｙｕｉｏｐａｓｄｆｇｈｊｋｌｚｘｃｖｂｎｍＱＷＥＲＴＹＵＩＯＰＡＳＤＦＧＨＪＫＬＺＸＣＶＢＮＭ'\
+        'ｧｱｨｲｩｳｪｴｫｵｶｷｸｹｺｻｼｽｾｿﾀﾁｯﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓｬﾔｭﾕｮﾖﾗﾘﾙﾚﾛﾜｦﾝｰ'\
+        '（）！？．％／＆＋ー＝'\
+        '･“”｢｣｡:'
+    CONVERTED = '1234567890qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM'\
+        'ァアィイゥウェエォオカキクケコサシスセソタチッツテトナニヌネノハヒフヘホマミムメモャヤュユョヨラリルレロワヲンー'\
+        '()!?.%/&+-='\
+        '・「」「」。：'
     text = text.translate(str.maketrans(RAW, CONVERTED)).replace('ウﾞ', 'ヴ')
     result = ''
     for i in range(len(text)-1):
@@ -62,7 +66,6 @@ def clean_up_text(text) -> str:
     text = re.sub(r'\([^)]+\)', '', text)  # 去除括号
     text = re.sub(r'\[[^]]+\]', '', text)  # 去除外字
     # 去除冒号说话人
-    text = text.replace(':', '：')
     if '：' in text and text.index('：') < 8:
         text = text[text.index('：')+1:]
     return text
