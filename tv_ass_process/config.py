@@ -1,8 +1,9 @@
 import json
+from typing import Union
 
 
 class Config:
-    def __init__(self, arg='user_config.json'):
+    def __init__(self, arg: Union[str, dict]):
         if isinstance(arg, str):
             self.init_from_file(arg)
         elif isinstance(arg, dict):

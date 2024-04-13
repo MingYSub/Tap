@@ -16,12 +16,11 @@ logger.addHandler(consoleHandler)
 
 def argparse_config():
     from argparse import ArgumentParser
-    global user_config
-    user_config = Config()
 
     parser = ArgumentParser(
         description=f'Tap {SCRIPT_VERSION} (TV Ass Process) | 处理从 TV 提取的 ASS 字幕')
     parser.add_argument('path', type=str, nargs='+', help='输入路径（支持文件和文件夹）')
+    parser.add_argument('--conf', dest='conf_path', type=str, help='指定配置文件')
     parser.add_argument('--format', dest='output_format',
                         type=str, choices=SUPPORTED_EXTENSIONS, help='指定输出格式')
     parser.add_argument('--output', '-o', dest='output_path',
@@ -32,14 +31,14 @@ def argparse_config():
         '--actor', '-a', dest='actor', action='store_true', help='输出说话人')
     group_actor.add_argument(
         '--no-actor', '-an', dest='actor', action='store_false', help='不输出说话人')
-    group_actor.set_defaults(actor=user_config.actor)
+    group_actor.set_defaults(actor=None)
 
     group_clean = parser.add_mutually_exclusive_group(required=False)
     group_clean.add_argument(
         '--clean', '-c', dest='clean_mode', action='store_true', help='删除语气词')
     group_clean.add_argument(
         '--no-clean', '-cn', dest='clean_mode', action='store_false', help='不删除语气词')
-    group_clean.set_defaults(clean_mode=user_config.clean_mode)
+    group_clean.set_defaults(clean_mode=None)
 
     group_merge = parser.add_mutually_exclusive_group(required=False)
     group_merge.add_argument(
@@ -48,14 +47,14 @@ def argparse_config():
         '--no-merge', '-mn', dest='merge', action='store_const', const=NO_MERGE, help='不合并时间重复行')
     group_merge.add_argument(
         '--force-merge', '-mf', dest='merge', action='store_const', const=FORCE_MERGE, help='强制合并时间重复行')
-    group_merge.set_defaults(merge=user_config.merge)
+    group_merge.set_defaults(merge=None)
 
     group_space = parser.add_mutually_exclusive_group(required=False)
     group_space.add_argument(
         '--space', '-s', dest='add_spaces', action='store_true', help='中西文之间添加空格')
     group_space.add_argument(
         '--no-space', '-sn', dest='add_spaces', action='store_false', help='中西文之间不添加空格')
-    group_space.set_defaults(add_spaces=user_config.add_spaces)
+    group_space.set_defaults(add_spaces=None)
 
     group_repeated_syllables = parser.add_mutually_exclusive_group(
         required=False)
@@ -63,12 +62,23 @@ def argparse_config():
         '--adjust-repeated-syllables', '-rs', dest='adjust_repeated_syllables', action='store_true', help='整理重复音节')
     group_repeated_syllables.add_argument(
         '--no-adjust-repeated-syllables', '-rsn', dest='adjust_repeated_syllables', action='store_false', help='不整理重复音节')
-    group_repeated_syllables.set_defaults(
-        adjust_repeated_syllables=user_config.adjust_repeated_syllables)
+    group_repeated_syllables.set_defaults(adjust_repeated_syllables=None)
 
     args = parser.parse_args()
+    if args.conf_path:
+        if os.path.isfile(args.conf_path):
+            conf_path = args.conf_path
+        else:
+            logger.warning('配置文件不存在，忽略')
+            conf_path = os.path.join(
+                os.path.dirname(__file__), 'user_config.json')
+    else:
+        conf_path = os.path.join(os.path.dirname(__file__), 'user_config.json')
+
+    global user_config
+    user_config = Config(conf_path)
     for key, value in vars(args).items():
-        if not value is None:
+        if value is not None:
             setattr(user_config, key, value)
 
 
