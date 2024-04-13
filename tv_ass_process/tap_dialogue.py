@@ -13,6 +13,9 @@ class TapDialogue:
 
         self.actor = '-1'
 
+    def __str__(self) -> str:
+        return self.text
+
     @property
     def text_stripped(self) -> str:
         text = self.text

@@ -69,6 +69,9 @@ class TapAssParser:
         return self
 
     def set_actor(self) -> 'TapAssParser':
+        INNER_ACTIVITY_START_SYMBOLS = ('<', '＜', '《', '｟', '≪')
+        INNER_ACTIVITY_END_SYMBOLS = ('>', '＞', '》', '｠', '≫')
+
         none_actor_index = 1
         same_actor_flag = False
 
@@ -99,9 +102,9 @@ class TapAssParser:
             else:  # Set the speaker based on parentheses or coordinates
                 if same_actor_flag or index > 0 and self.events[index-1].text.endswith(('→', '➡')):
                     actor = self.events[index-1].actor
-                if text_stripped.startswith(('<', '＜', '《', '｟', '≪')):
+                if text_stripped.startswith(INNER_ACTIVITY_START_SYMBOLS):
                     same_actor_flag = True
-                if text_stripped.endswith(('>', '＞', '》', '｠', '≫')):
+                if text_stripped.endswith(INNER_ACTIVITY_END_SYMBOLS):
                     same_actor_flag = False
                 if not actor and not same_actor_flag and index > 0:
                     last_line = self.events[index-1]
