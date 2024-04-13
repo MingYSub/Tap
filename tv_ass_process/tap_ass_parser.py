@@ -1,5 +1,8 @@
 import re
 import os
+
+from typing import Union, IO, List, Sequence
+
 from .constants import ASS_HEADER, NO_MERGE, AUTO_MERGE, FORCE_MERGE
 from .config import Config
 from .tap_dialogue import TapDialogue
@@ -7,7 +10,7 @@ from .text_processing import *
 
 
 class TapAssParser:
-    def __init__(self, doc):
+    def __init__(self, doc: Union[IO, str]):
         self.actor_record = {}
         self.events = []
         self.y_spacing = 0
@@ -20,7 +23,9 @@ class TapAssParser:
                 with open(doc, 'r', encoding='utf-8_sig') as fp:
                     self.parse_file(fp)
             else:
-                self.parse_str(doc.split('\n'))
+                self.parse_str(doc)
+        else:
+            raise ValueError('doc must be a file or a string')
 
     def __iter__(self):
         return self.iterate_events()
@@ -29,10 +34,12 @@ class TapAssParser:
         for index, event in enumerate(self.events):
             yield index, event
 
-    def parse_file(self, fp):
+    def parse_file(self, fp: IO):
         self.parse_str(fp.readlines())
 
-    def parse_str(self, lines):
+    def parse_str(self, lines: Union[List[str], str]):
+        if isinstance(lines, str):
+            lines = lines.splitlines()
         for line in lines:
             if line.startswith('Dialogue:') and ',Rubi,' not in line:
                 event = TapDialogue(line)
@@ -118,7 +125,7 @@ class TapAssParser:
 
         return self
 
-    def remove_lines(self, indexes_to_remove) -> 'TapAssParser':
+    def remove_lines(self, indexes_to_remove: Sequence[int]) -> 'TapAssParser':
         for index in sorted(indexes_to_remove, reverse=True):
             self.events.pop(index)
         return self
@@ -135,7 +142,7 @@ class TapAssParser:
         for index in range(len(self.events)-1):
             event = self.events[index]
             next_event = self.events[index+1]
-            if event.start == next_event .start and event.end == next_event.end:
+            if event.start == next_event.start and event.end == next_event.end:
                 if event.actor == next_event.actor:
                     next_event.text = event.text + '\u3000' + next_event.text
                     if mode == AUTO_MERGE:
