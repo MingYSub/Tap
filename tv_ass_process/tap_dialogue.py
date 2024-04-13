@@ -1,5 +1,9 @@
 import re
 from .constants import CHARS_TO_DELETE, REPLACEMENT_DICT
+import logging
+
+
+logger = logging.getLogger('Tap')
 
 
 class TapDialogue:
@@ -9,7 +13,11 @@ class TapDialogue:
         self.text = parts[9].strip()
 
         pos_match = re.search(r'\\pos\(\d+,(\d+)\)', self.text)
-        self.pos_y = int(pos_match.group(1)) if pos_match else 0
+        if pos_match:
+            self.pos_y = int(pos_match.group(1))
+        else:
+            self.pos_y = 0
+            logger.warning('\tCannot find pos tag')
 
         self.actor = '-1'
 

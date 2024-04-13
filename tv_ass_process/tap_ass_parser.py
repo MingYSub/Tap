@@ -1,5 +1,6 @@
 import re
 import os
+import logging
 
 from typing import Union, IO, List, Sequence
 
@@ -7,6 +8,9 @@ from .constants import ASS_HEADER, NO_MERGE, AUTO_MERGE, FORCE_MERGE
 from .config import Config
 from .tap_dialogue import TapDialogue
 from .text_processing import *
+
+
+logger = logging.getLogger('Tap')
 
 
 class TapAssParser:
@@ -46,12 +50,17 @@ class TapAssParser:
                 event.text = convert_full_half_width_characters(event.text)
                 self.events.append(event)
             elif 'ResY:' in line:
-                res_y = int(re.search(r'ResY: ?(\d+)', line).group(1))
-                self.y_spacing = int(60*(res_y/540))
+                try:
+                    res_y = int(re.search(r'ResY: ?(\d+)', line).group(1))
+                    self.y_spacing = int(60*(res_y/540))
+                except:
+                    logger.warning('\tPlayResY is not a number')
 
     def process(self, user_config: Config) -> 'TapAssParser':
         self.set_actor()
-        self.merge_duplicate_rows_by_time(user_config.merge)
+        logger.info('\tset actor done')
+        self.merge_duplicate_lines_by_time(user_config.merge)
+        logger.info('\tmerge duplicate lines done')
         del_list = []
 
         for index, line in self:
@@ -71,6 +80,8 @@ class TapAssParser:
             text = replace_spaces_between_AN(text)
 
             line.text = text
+
+        logger.info('\tline process done')
 
         self.remove_lines(del_list)
         return self
@@ -130,7 +141,7 @@ class TapAssParser:
             self.events.pop(index)
         return self
 
-    def merge_duplicate_rows_by_time(self, mode=AUTO_MERGE) -> 'TapAssParser':
+    def merge_duplicate_lines_by_time(self, mode=AUTO_MERGE) -> 'TapAssParser':
         if mode not in [AUTO_MERGE, NO_MERGE, FORCE_MERGE]:
             raise ValueError(f"Invalid mode.")
 
@@ -176,6 +187,6 @@ class TapAssParser:
     def write_srt(self, output_path: str, output_actor: bool = False, ending_char: str = ''):
         with open(output_path, 'w', encoding='utf-8') as output_file:
             for i, line in self:
-                output_file.write(
-                    '%d\n%s --> %s\n%s%s%s\n\n' % (i+1, f'0{line.start.replace(".", ",")}', f'0{line.end.replace(".",",")}',
-                                                   f'{{{line.actor}}}' if output_actor and line.actor else '', line.text, ending_char))
+                output_file.write('%d\n%s --> %s\n%s%s%s\n\n' %
+                                  (i+1, f'0{line.start.replace(".", ",")}', f'0{line.end.replace(".",",")}',
+                                   f'{{{line.actor}}}' if output_actor and line.actor else '', line.text, ending_char))
