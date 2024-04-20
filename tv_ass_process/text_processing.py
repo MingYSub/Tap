@@ -7,11 +7,11 @@ CJK_RANGES = [(0x3040, 0xfaff)]
 def convert_full_half_width_characters(text) -> str:
     RAW = '１２３４５６７８９０ｑｗｅｒｔｙｕｉｏｐａｓｄｆｇｈｊｋｌｚｘｃｖｂｎｍＱＷＥＲＴＹＵＩＯＰＡＳＤＦＧＨＪＫＬＺＸＣＶＢＮＭ'\
         'ｧｱｨｲｩｳｪｴｫｵｶｷｸｹｺｻｼｽｾｿﾀﾁｯﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓｬﾔｭﾕｮﾖﾗﾘﾙﾚﾛﾜｦﾝｰ'\
-        '（）！？．％／＆＋ー＝'\
+        '（）！？．％／＆＋＝'\
         '･“”｢｣｡:'
     CONVERTED = '1234567890qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM'\
         'ァアィイゥウェエォオカキクケコサシスセソタチッツテトナニヌネノハヒフヘホマミムメモャヤュユョヨラリルレロワヲンー'\
-        '()!?.%/&+-='\
+        '()!?.%/&+='\
         '・「」「」。：'
     text = text.translate(str.maketrans(RAW, CONVERTED)).replace('ウﾞ', 'ヴ')
     result = ''
