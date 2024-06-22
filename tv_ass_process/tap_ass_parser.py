@@ -87,8 +87,9 @@ class TapAssParser:
         return self
 
     def set_actor(self) -> 'TapAssParser':
-        INNER_ACTIVITY_START_SYMBOLS = ('<', '＜', '《', '｟', '≪', '〈')
-        INNER_ACTIVITY_END_SYMBOLS = ('>', '＞', '》', '｠', '≫', '〉')
+        PARENTHESIS_START_SYMBOLS = ('<', '＜', '《', '｟', '≪', '〈')
+        PARENTHESIS_END_SYMBOLS = ('>', '＞', '》', '｠', '≫', '〉')
+        CONTINOUS_LINE_SYMBOLS = ('→', '➡', '⤵️')
 
         none_actor_index = 1
         same_actor_flag = False
@@ -100,8 +101,10 @@ class TapAssParser:
 
             # Find the specific speaker
             if text_stripped.startswith('(') and ')' in text_stripped:
-                actor = re.search(r'\((.*?)\)', text_stripped).group(1)
-                same_actor_flag = False
+                actor_tmp = re.search(r'\((.*?)\)', text_stripped).group(1)
+                if text_stripped.replace(f'({actor_tmp})', '', 1) != '':
+                    actor = actor_tmp
+                    same_actor_flag = False
             elif '：' in text_stripped and text_stripped.index('：') < 8:
                 actor = text_stripped[:text_stripped.index('：')]
                 same_actor_flag = False
@@ -118,11 +121,12 @@ class TapAssParser:
                     elif not actor:
                         actor = self.actor_record[color]
             else:  # Set the speaker based on parentheses or coordinates
-                if same_actor_flag or index > 0 and self.events[index-1].text.endswith(('→', '➡')):
+                text_stripped = re.sub(r'{[^}]+}', '', line.text)
+                if same_actor_flag or index > 0 and self.events[index-1].text.endswith(CONTINOUS_LINE_SYMBOLS):
                     actor = self.events[index-1].actor
-                if text_stripped.startswith(INNER_ACTIVITY_START_SYMBOLS):
+                if text_stripped.startswith(PARENTHESIS_START_SYMBOLS):
                     same_actor_flag = True
-                if text_stripped.endswith(INNER_ACTIVITY_END_SYMBOLS):
+                if text_stripped.endswith(PARENTHESIS_END_SYMBOLS):
                     same_actor_flag = False
                 if not actor and not same_actor_flag and index > 0:
                     last_line = self.events[index-1]
@@ -133,6 +137,9 @@ class TapAssParser:
             else:
                 line.actor = str(none_actor_index)
                 none_actor_index += 1
+
+            logger.debug(
+                f'{line.actor}: {re.sub(r"{[^}]+}", "", line.text_stripped)}')
 
         return self
 
