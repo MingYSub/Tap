@@ -14,15 +14,9 @@ def convert_full_half_width_characters(text) -> str:
         '()!?.%/&+='\
         '・「」「」。：'
     text = text.translate(str.maketrans(RAW, CONVERTED)).replace('ウﾞ', 'ヴ')
-    result = ''
-    for i in range(len(text)-1):
-        if text[i+1] == 'ﾞ':
-            result += chr(ord(text[i]) + 1)
-        elif text[i+1] == 'ﾟ':
-            result += chr(ord(text[i]) + 2)
-        elif text[i] not in ['ﾞ', 'ﾟ']:
-            result += text[i]
-    return result + text[-1]
+    text += ' '
+    return ''.join(chr(ord(text[i]) + 'ﾞﾟ'.find(text[i+1]) + 1)
+                   for i in range(len(text)-1) if text[i] not in ['ﾞ', 'ﾟ'])
 
 
 def check_CJK_char(text) -> bool:
