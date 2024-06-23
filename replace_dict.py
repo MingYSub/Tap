@@ -1,9 +1,9 @@
 # 示例：'替换前': '替换后'
 CUSTOM_REPLACEMENTS = {
-
+    '！？': '!?'
 }
 
-# 正则表达式替换
+# 正则表达式
 REGULAR_REPLACEMENTS = {
     '・$': '',
     '^・': '',

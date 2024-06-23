@@ -1,5 +1,4 @@
 import re
-from .constants import CHARS_TO_DELETE, REPLACEMENT_DICT
 import logging
 
 
@@ -24,11 +23,30 @@ class TapDialogue:
     def __str__(self) -> str:
         return self.text
 
-    @property
-    def text_stripped(self) -> str:
+    def text_stripped(self, keep_symbols: bool = False) -> str:
+        CHARS_TO_DELETE = '《》≪≫<>＜＞｟｠〈〉→➡⤵️♬⚟📱☎🔊📺🎤'
+        REPLACEMENT_DICT = {
+            '\u200e': '',
+            '\\N': '',
+            '?': '？',
+            '!': '！',
+            ' ': '\u3000',
+            '「\u3000': '「',
+            '\u3000」': '」',
+            '？\u3000': '？',
+            '！\u3000': '！',
+            '…。': '…',
+            '。\u3000': '\u3000',
+            '。\n': '\n',
+            '。': '\u3000',
+            '}・': '}',
+            '((': '',
+            '))': '',
+        }
         text = self.text
-        for char in CHARS_TO_DELETE:
-            text = text.replace(char, '')
+        if not keep_symbols:
+            for char in CHARS_TO_DELETE:
+                text = text.replace(char, '')
         for old, new in REPLACEMENT_DICT.items():
             text = text.replace(old, new)
         return text

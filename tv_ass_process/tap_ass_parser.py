@@ -1,10 +1,9 @@
 import re
 import os
 import logging
-
 from typing import Union, IO, List, Sequence
 
-from .constants import ASS_HEADER, NO_MERGE, AUTO_MERGE, FORCE_MERGE
+from .constants import ASS_HEADER, MergeMode
 from .config import Config
 from .tap_dialogue import TapDialogue
 from .text_processing import *
@@ -65,7 +64,7 @@ class TapAssParser:
 
         for index, line in self:
             line.text = clean_up_text(line.text)
-            text = line.text_stripped
+            text = line.text_stripped()
             if user_config.clean_mode:
                 text = clean_trash(text)
             if text == '':
@@ -89,7 +88,7 @@ class TapAssParser:
     def set_actor(self) -> 'TapAssParser':
         PARENTHESIS_START_SYMBOLS = ('<', '＜', '《', '｟', '≪', '〈')
         PARENTHESIS_END_SYMBOLS = ('>', '＞', '》', '｠', '≫', '〉')
-        CONTINOUS_LINE_SYMBOLS = ('→', '➡', '⤵️')
+        CONTINOUS_LINE_SYMBOLS = ('→', '➡', '⤵️', '・')
 
         none_actor_index = 1
         same_actor_flag = False
@@ -97,7 +96,7 @@ class TapAssParser:
         for index, line in self:
             # Three types of actor: parentheses, colon, color
             actor = None
-            text_stripped = re.sub(r'{[^}]+}', '', line.text_stripped)
+            text_stripped = re.sub(r'{[^}]+}', '', line.text_stripped())
 
             # Find the specific speaker
             if text_stripped.startswith('(') and ')' in text_stripped:
@@ -121,7 +120,8 @@ class TapAssParser:
                     elif not actor:
                         actor = self.actor_record[color]
             else:  # Set the speaker based on parentheses or coordinates
-                text_stripped = re.sub(r'{[^}]+}', '', line.text)
+                text_stripped = re.sub(
+                    r'{[^}]+}', '', line.text_stripped(keep_symbols=True))
                 if same_actor_flag or index > 0 and self.events[index-1].text.endswith(CONTINOUS_LINE_SYMBOLS):
                     actor = self.events[index-1].actor
                 if text_stripped.startswith(PARENTHESIS_START_SYMBOLS):
@@ -139,7 +139,7 @@ class TapAssParser:
                 none_actor_index += 1
 
             logger.debug(
-                f'{line.actor}: {re.sub(r"{[^}]+}", "", line.text_stripped)}')
+                f'{line.actor}: {re.sub(r"{[^}]+}", "", line.text_stripped())}')
 
         return self
 
@@ -148,11 +148,11 @@ class TapAssParser:
             self.events.pop(index)
         return self
 
-    def merge_duplicate_lines_by_time(self, mode=AUTO_MERGE) -> 'TapAssParser':
-        if mode not in [AUTO_MERGE, NO_MERGE, FORCE_MERGE]:
+    def merge_duplicate_lines_by_time(self, mode=MergeMode.AUTO_MERGE) -> 'TapAssParser':
+        if mode not in [MergeMode.AUTO_MERGE, MergeMode.NO_MERGE, MergeMode.FORCE_MERGE]:
             raise ValueError(f"Invalid mode.")
 
-        if mode == NO_MERGE:
+        if mode == MergeMode.NO_MERGE:
             return self
 
         del_list = []
@@ -163,11 +163,11 @@ class TapAssParser:
             if event.start == next_event.start and event.end == next_event.end:
                 if event.actor == next_event.actor:
                     next_event.text = event.text + '\u3000' + next_event.text
-                    if mode == AUTO_MERGE:
+                    if mode == MergeMode.AUTO_MERGE:
                         next_event.text = next_event.text.replace(
                             '？\u3000', '？').replace('！\u3000', '！')
                     del_list.append(index)
-                elif mode == FORCE_MERGE:
+                elif mode == MergeMode.FORCE_MERGE:
                     next_event.actor = event.actor + '/' + next_event.actor
                     next_event.text = event.text + '\n' + next_event.text
                     del_list.append(index)

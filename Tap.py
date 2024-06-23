@@ -1,10 +1,13 @@
-from replace_dict import CUSTOM_REPLACEMENTS, REGULAR_REPLACEMENTS
-from tv_ass_process.constants import SCRIPT_VERSION, SUPPORTED_EXTENSIONS, NO_MERGE, AUTO_MERGE, FORCE_MERGE
-from tv_ass_process.config import Config
-from tv_ass_process.tap_ass_parser import TapAssParser
 import re
 import os
 import logging
+
+from tv_ass_process.constants import SCRIPT_VERSION, SUPPORTED_EXTENSIONS, MergeMode
+from tv_ass_process.config import Config
+from tv_ass_process.tap_ass_parser import TapAssParser
+
+from replace_dict import CUSTOM_REPLACEMENTS, REGULAR_REPLACEMENTS
+
 
 logger = logging.getLogger('Tap')
 logger.setLevel(logging.INFO)
@@ -42,11 +45,11 @@ def argparse_config():
 
     group_merge = parser.add_mutually_exclusive_group(required=False)
     group_merge.add_argument(
-        '--merge', '-m', dest='merge', action='store_const', const=AUTO_MERGE, help='合并时间重复行')
+        '--merge', '-m', dest='merge', action='store_const', const=MergeMode.AUTO_MERGE, help='合并时间重复行')
     group_merge.add_argument(
-        '--no-merge', '-mn', dest='merge', action='store_const', const=NO_MERGE, help='不合并时间重复行')
+        '--no-merge', '-mn', dest='merge', action='store_const', const=MergeMode.NO_MERGE, help='不合并时间重复行')
     group_merge.add_argument(
-        '--force-merge', '-mf', dest='merge', action='store_const', const=FORCE_MERGE, help='强制合并时间重复行')
+        '--force-merge', '-mf', dest='merge', action='store_const', const=MergeMode.FORCE_MERGE, help='强制合并时间重复行')
     group_merge.set_defaults(merge=None)
 
     group_space = parser.add_mutually_exclusive_group(required=False)
