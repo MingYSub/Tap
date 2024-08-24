@@ -145,7 +145,7 @@ def get_ass_files(path):
                 logger.warning(f"所选文件非 ass 格式: {element}")
         elif os.path.isdir(element):
             ass_files = [
-                element + "\\" + file
+                os.path.join(element, file)
                 for file in os.listdir(element)
                 if file.endswith(".ass") and not file.endswith("_processed.ass")
             ]
@@ -187,7 +187,7 @@ def main():
                 logger.warning(
                     f"输出路径后缀名不符合要求，将输出为 {output_format} 格式。"
                 )
-                user_config.output_path = parts[0] + user_config.output_format
+                user_config.output_path = parts[0] + "." + user_config.output_format
         else:
             os.makedirs(user_config.output_path, exist_ok=True)
             output_dir = parts[0]
@@ -219,7 +219,9 @@ def main():
         # exec(
         #     f"subs.write_{output_format}(output_file, user_config.actor, user_config.ending_char)"
         # )
-        subs.save(output_file, output_format, user_config.actor, user_config.ending_char)
+        subs.save(
+            output_file, output_format, user_config.actor, user_config.ending_char
+        )
         logger.info(f"Done: {single_file}")
 
 
