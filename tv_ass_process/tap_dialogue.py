@@ -11,14 +11,16 @@ class TapDialogue:
         self.start, self.end = parts[1].strip(), parts[2].strip()
         self.text = parts[9].strip()
 
-        pos_match = re.search(r"\\pos\(\d+,(\d+)\)", self.text)
+        pos_match = re.search(r"\\pos\((\d+),(\d+)\)", self.text)
         if pos_match:
-            self.pos_y = int(pos_match.group(1))
+            self.pos_x = int(pos_match.group(1))
+            self.pos_y = int(pos_match.group(2))
         else:
+            self.pos_x = 0
             self.pos_y = 0
             logger.warning("\tCannot find pos tag")
 
-        self.actor = "-1"
+        self.actor = "None"
 
     def __str__(self) -> str:
         return self.text

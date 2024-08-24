@@ -1,6 +1,8 @@
 import json
 from typing import Union
 
+from .constants import MergeMode
+
 
 class Config:
     def __init__(self, arg: Union[str, dict]):
@@ -17,7 +19,7 @@ class Config:
         self.init_from_dict(local_config)
 
     def init_from_dict(self, user_config: dict):
-        self.merge = user_config.get("merge", "auto")
+        self.merge = MergeMode(user_config.get("merge", "auto"))
         self.clean_mode = user_config.get("clean_mode", True)
         self.actor = user_config.get("actor", False)
         self.output_format = user_config.get("output_format", "txt")

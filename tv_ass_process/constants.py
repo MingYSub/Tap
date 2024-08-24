@@ -1,4 +1,6 @@
-SCRIPT_VERSION = "v0.5.3"
+from enum import Enum
+
+SCRIPT_VERSION = "v0.5.4"
 GITHUB_LINK = "https://github.com/MingYSub/Tap"
 
 ASS_HEADER = (
@@ -18,7 +20,7 @@ ASS_HEADER = (
 SUPPORTED_EXTENSIONS = ["ass", "txt", "srt"]
 
 
-class MergeMode:
+class MergeMode(Enum):
     NO_MERGE = "none"
     AUTO_MERGE = "auto"
     FORCE_MERGE = "force"
@@ -32,9 +34,8 @@ REPEATED_SYLLABLES = {
         "阿呆",
         "当",
         "朝",
-        "明日",
+        "明",
         "足",
-        "明け",
         "熱",
         "頭",
         "甘",
@@ -83,7 +84,21 @@ REPEATED_SYLLABLES = {
     "き": ("貴様", "君", "聞", "気", "来", "緊", "切"),
     "く": ("暗", "食", "熊", "国", "口", "悔し", "黒"),
     "け": ("結", "決"),
-    "こ": ("怖", "此", "子", "今", "心", "高", "言葉", "告", "答", "校", "恋", "小"),
+    "こ": (
+        "怖",
+        "此",
+        "子",
+        "今",
+        "心",
+        "高",
+        "言葉",
+        "告",
+        "答",
+        "校",
+        "恋",
+        "小",
+        "後",
+    ),
     "さ": ("最", "流石", "先", "寂", "更", "早速", "寒", "探", "捜", "桜"),
     "し": ("幸せ", "心", "死", "新", "真", "知", "失", "師", "白"),
     "す": ("好き", "凄", "少", "素"),

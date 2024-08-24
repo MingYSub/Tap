@@ -2,10 +2,14 @@ import logging
 import os
 import re
 
+from tv_ass_process import (
+    TapAssParser,
+    MergeMode,
+    Config,
+    SCRIPT_VERSION,
+    SUPPORTED_EXTENSIONS,
+)
 from replace_dict import CUSTOM_REPLACEMENTS, REGULAR_REPLACEMENTS
-from tv_ass_process.config import Config
-from tv_ass_process.constants import SCRIPT_VERSION, SUPPORTED_EXTENSIONS, MergeMode
-from tv_ass_process.tap_ass_parser import TapAssParser
 
 logger = logging.getLogger("Tap")
 logger.setLevel(logging.INFO)
@@ -18,42 +22,59 @@ def argparse_config():
     from argparse import ArgumentParser
 
     parser = ArgumentParser(
-        description=f"Tap {SCRIPT_VERSION} (TV Ass Process) | 处理从 TV 提取的 ASS 字幕"
+        description=f"Tap {SCRIPT_VERSION} (TV Ass Process) | Processing ASS subtitles extracted from ts files"
     )
     parser.add_argument(
-        "path", type=str, nargs="+", help="输入路径（支持文件和文件夹）"
+        "path", type=str, nargs="+", help="Input path (supports files and directories)"
     )
-    parser.add_argument("--conf", dest="conf_path", type=str, help="指定配置文件")
+    parser.add_argument(
+        "--conf", dest="conf_path", type=str, help="Specify configuration file"
+    )
     parser.add_argument(
         "--format",
         dest="output_format",
         type=str,
         choices=SUPPORTED_EXTENSIONS,
-        help="指定输出格式",
+        help="Specify output format",
     )
     parser.add_argument(
-        "--output", "-o", dest="output_path", type=str, help="指定输出路径"
+        "--output", "-o", dest="output_path", type=str, help="Specify output path"
+    )
+    parser.add_argument(
+        "--suffix",
+        "-x",
+        dest="ending_char",
+        type=str,
+        help="Char(s) appended to the end of each line",
     )
 
     group_actor = parser.add_mutually_exclusive_group(required=False)
     group_actor.add_argument(
-        "--actor", "-a", dest="actor", action="store_true", help="输出说话人"
+        "--actor", "-a", dest="actor", action="store_true", help="Output speaker"
     )
     group_actor.add_argument(
-        "--no-actor", "-an", dest="actor", action="store_false", help="不输出说话人"
+        "--no-actor",
+        "-an",
+        dest="actor",
+        action="store_false",
+        help="Do not output speaker",
     )
     group_actor.set_defaults(actor=None)
 
     group_clean = parser.add_mutually_exclusive_group(required=False)
     group_clean.add_argument(
-        "--clean", "-c", dest="clean_mode", action="store_true", help="删除语气词"
+        "--clean",
+        "-c",
+        dest="clean_mode",
+        action="store_true",
+        help="Remove interjections",
     )
     group_clean.add_argument(
         "--no-clean",
         "-cn",
         dest="clean_mode",
         action="store_false",
-        help="不删除语气词",
+        help="Do not remove interjections",
     )
     group_clean.set_defaults(clean_mode=None)
 
@@ -64,7 +85,7 @@ def argparse_config():
         dest="merge",
         action="store_const",
         const=MergeMode.AUTO_MERGE,
-        help="合并时间重复行",
+        help="Automatically merge lines with overlapping times",
     )
     group_merge.add_argument(
         "--no-merge",
@@ -72,7 +93,7 @@ def argparse_config():
         dest="merge",
         action="store_const",
         const=MergeMode.NO_MERGE,
-        help="不合并时间重复行",
+        help="Do not merge lines with overlapping times",
     )
     group_merge.add_argument(
         "--force-merge",
@@ -80,7 +101,7 @@ def argparse_config():
         dest="merge",
         action="store_const",
         const=MergeMode.FORCE_MERGE,
-        help="强制合并时间重复行",
+        help="Force merge lines with overlapping times",
     )
     group_merge.set_defaults(merge=None)
 
@@ -90,14 +111,14 @@ def argparse_config():
         "-s",
         dest="add_spaces",
         action="store_true",
-        help="中西文之间添加空格",
+        help="Add space between CJK and AN characters",
     )
     group_space.add_argument(
         "--no-space",
         "-sn",
         dest="add_spaces",
         action="store_false",
-        help="中西文之间不添加空格",
+        help="Do not add space between CJK and AN characters",
     )
     group_space.set_defaults(add_spaces=None)
 
@@ -107,15 +128,16 @@ def argparse_config():
         "-rs",
         dest="adjust_repeated_syllables",
         action="store_true",
-        help="整理重复音节",
+        help="Adjust repeated syllables",
     )
     group_repeated_syllables.add_argument(
         "--no-adjust-repeated-syllables",
         "-rsn",
         dest="adjust_repeated_syllables",
         action="store_false",
-        help="不整理重复音节",
+        help="Do not adjust repeated syllables",
     )
+
     group_repeated_syllables.set_defaults(adjust_repeated_syllables=None)
 
     args = parser.parse_args()
@@ -123,7 +145,7 @@ def argparse_config():
         if os.path.isfile(args.conf_path):
             conf_path = args.conf_path
         else:
-            logger.warning("配置文件不存在，忽略")
+            logger.warning("Configuration file does not exist, skipping.")
             conf_path = os.path.join(os.path.dirname(__file__), "user_config.json")
     else:
         conf_path = os.path.join(os.path.dirname(__file__), "user_config.json")
@@ -135,14 +157,14 @@ def argparse_config():
     return user_config
 
 
-def get_ass_files(path):
+def get_ass_files(paths):
     result = []
-    for element in path:
+    for element in paths:
         if os.path.isfile(element):
             if element.endswith(".ass"):
                 result.append(element)
             else:
-                logger.warning(f"所选文件非 ass 格式: {element}")
+                logger.warning(f"The file is not in ASS format: {element}")
         elif os.path.isdir(element):
             ass_files = [
                 os.path.join(element, file)
@@ -152,9 +174,9 @@ def get_ass_files(path):
             if len(ass_files):
                 result.extend(ass_files)
             else:
-                logger.warning(f"该目录下无 ass 文件: {element}")
+                logger.warning(f"No ASS files found in the directory: {element}")
         else:
-            logger.warning(f"该路径不存在: {element}")
+            logger.warning(f"The path does not exist: {element}")
     return result
 
 
@@ -166,7 +188,9 @@ def main():
     if len(ass_files) > 1 and user_config.output_path:
         parts = os.path.splitext(user_config.output_path)
         if parts[1]:
-            logger.warning(f"输出路径应为目录，将输出到原文件目录下。")
+            logger.warning(
+                f"Output path should be a directory; output will be saved to the original file's directory."
+            )
             user_config.output_path = None
         else:
             os.makedirs(user_config.output_path, exist_ok=True)
@@ -178,25 +202,25 @@ def main():
             if os.path.realpath(user_config.output_path) == os.path.realpath(
                 ass_files[0]
             ):
-                logger.warning(f"输出路径不可与输入路径相同。")
+                logger.warning(f"The output path cannot be the same as the input path.")
                 user_config.output_path = None
             if file_extension in SUPPORTED_EXTENSIONS:
-                logger.warning(f"将输出为 {file_extension} 格式。")
+                logger.warning(f"Output will be in {file_extension} format.")
                 output_format = parts[1][1:]
             else:
                 logger.warning(
-                    f"输出路径后缀名不符合要求，将输出为 {output_format} 格式。"
+                    f"The output path extension is invalid; output will be in {output_format} format."
                 )
                 user_config.output_path = parts[0] + "." + user_config.output_format
         else:
             os.makedirs(user_config.output_path, exist_ok=True)
             output_dir = parts[0]
 
-    logger.info("当前配置")
+    logger.info("Config")
     for k, v in vars(user_config).items():
         if k == "path":
             continue
-        logger.info(f"\t{k}: {v}")
+        logger.info(f"  {k}: {v}")
     for single_file in ass_files:
         if output_dir is not None:
             output_file = (
@@ -216,9 +240,6 @@ def main():
                 line.text = line.replace(old, new)
             for pattern, replacement in REGULAR_REPLACEMENTS.items():
                 line.text = re.sub(pattern, replacement, line.text)
-        # exec(
-        #     f"subs.write_{output_format}(output_file, user_config.actor, user_config.ending_char)"
-        # )
         subs.save(
             output_file, output_format, user_config.actor, user_config.ending_char
         )

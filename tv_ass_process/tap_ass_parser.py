@@ -1,7 +1,7 @@
 import io
 import logging
 import os
-from typing import Union, IO, List, Sequence
+from typing import Optional, Union, List, Sequence
 
 from .config import Config
 from .constants import ASS_HEADER, MergeMode
@@ -12,12 +12,12 @@ logger = logging.getLogger("Tap")
 
 
 class TapAssParser:
-    def __init__(self, doc: Union[io.IOBase, str]):
+    def __init__(self, doc: Union[io.TextIOBase, str]):
         self.actor_record = {}
         self.events = []
         self.y_spacing = 0
 
-        if isinstance(doc, io.IOBase):
+        if isinstance(doc, io.TextIOBase):
             self.parse_file(doc)
         elif isinstance(doc, str):
             if os.path.isfile(doc):
@@ -35,33 +35,38 @@ class TapAssParser:
         for index, event in enumerate(self.events):
             yield index, event
 
-    def parse_file(self, fp: io.IOBase):
+    def parse_file(self, fp: io.TextIOBase):
         self.parse_str(fp.readlines())
 
     def parse_str(self, lines: Union[List[str], str]):
+        def is_ruby(line: str):
+            return ",Rubi," in line or "\\fscx50\\fscy50" in line
+
         if isinstance(lines, str):
             lines = lines.splitlines()
         for line in lines:
-            if (
-                line.startswith("Dialogue:")
-                and ",Rubi," not in line
-                and "\\fscx50\\fscy50" not in line
-            ):
+            if line.startswith("Dialogue:") and not is_ruby(line):
                 event = TapDialogue(line)
                 event.text = convert_full_half_width_characters(event.text)
                 self.events.append(event)
+            elif "ResX:" in line:
+                try:
+                    res_x = int(re.search(r"ResX: ?(\d+)", line).group(1))
+                    self.x_spacing = int(180 * res_x / 540)
+                except ValueError:
+                    logger.warning("  PlayResX is not a number")
             elif "ResY:" in line:
                 try:
                     res_y = int(re.search(r"ResY: ?(\d+)", line).group(1))
-                    self.y_spacing = int(60 * (res_y / 540))
+                    self.y_spacing = int(60 * res_y / 540)
                 except ValueError:
-                    logger.warning("\tPlayResY is not a number")
+                    logger.warning("  PlayResY is not a number")
 
     def process(self, user_config: Config) -> "TapAssParser":
         self.set_actor()
-        logger.info("\tset actor done")
+        logger.info("  set actor done")
         self.merge_duplicate_lines_by_time(user_config.merge)
-        logger.info("\tmerge duplicate lines done")
+        logger.info("  merge duplicate lines done")
         del_list = []
 
         for index, line in self:
@@ -82,7 +87,7 @@ class TapAssParser:
 
             line.text = text
 
-        logger.info("\tline process done")
+        logger.info("  line process done")
 
         self.remove_lines(del_list)
         return self
@@ -140,8 +145,10 @@ class TapAssParser:
                     if (
                         (line.start, line.end) == (last_line.start, last_line.end)
                         and "\\c&" not in last_line.text
-                        and (line.pos_y and last_line.pos_y)
+                        and (line.pos_x and last_line.pos_x)
+                        and abs(line.pos_x - last_line.pos_x) <= self.y_spacing
                         and abs(line.pos_y - last_line.pos_y) <= self.y_spacing
+                        and 1
                     ):
                         actor = last_line.actor
             if actor:
@@ -162,7 +169,7 @@ class TapAssParser:
         return self
 
     def merge_duplicate_lines_by_time(
-        self, mode=MergeMode.AUTO_MERGE
+        self, mode: MergeMode = MergeMode.AUTO_MERGE
     ) -> "TapAssParser":
         if mode not in [
             MergeMode.AUTO_MERGE,
@@ -197,7 +204,11 @@ class TapAssParser:
         return self
 
     def save(
-        self, path, format_: str = None, actor: bool = False, ending_char: str = ""
+        self,
+        path,
+        format_: Optional[str] = None,
+        actor: bool = False,
+        ending_char: str = "",
     ):
         if format_ is None:
             format_ = path[-3:]
