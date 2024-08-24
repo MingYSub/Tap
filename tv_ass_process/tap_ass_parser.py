@@ -146,7 +146,7 @@ class TapAssParser:
                         (line.start, line.end) == (last_line.start, last_line.end)
                         and "\\c&" not in last_line.text
                         and (line.pos_x and last_line.pos_x)
-                        and abs(line.pos_x - last_line.pos_x) <= self.y_spacing
+                        and abs(line.pos_x - last_line.pos_x) <= self.x_spacing
                         and abs(line.pos_y - last_line.pos_y) <= self.y_spacing
                         and 1
                     ):
