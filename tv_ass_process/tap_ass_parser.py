@@ -74,7 +74,7 @@ class TapAssParser:
             text = line.text_stripped()
             if user_config.clean_mode:
                 text = clean_trash(text)
-            if text == "":
+            if text.strip("～") in ["", "\u3000"]:
                 del_list.append(index)
                 continue
 
