@@ -212,8 +212,7 @@ def adjust_repeated_syllables(text) -> str:
             return any(text.startswith(kanji) for kanji in REPEATED_SYLLABLES[syllable])
         return False
 
-    # text = text.strip("\u3000 ")
-    cases = text.strip("\u3000 ").split("\u3000")
+    cases = text.split("\u3000")
     repeated_syllable = ""
     for index, case in enumerate(cases):
         case = case.rstrip("…っッ")

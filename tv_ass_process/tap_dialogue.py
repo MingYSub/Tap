@@ -28,7 +28,7 @@ class TapDialogue:
     def text_stripped(self, keep_symbols: bool = False) -> str:
         CHARS_TO_DELETE = "《》≪≫<>＜＞｟｠〈〉［］→➡⤵️♪♬⚟⚞📱☎🔊📺🎤"
         REPLACEMENT_DICT = {
-            "\u200e": "", 
+            "\u200e": "",
             "\\N": "",
             "?": "？",
             "!": "！",
@@ -49,7 +49,7 @@ class TapDialogue:
                 text = text.replace(char, "")
         for old, new in REPLACEMENT_DICT.items():
             text = text.replace(old, new)
-        return text
+        return text.strip("\u3000")
 
     def replace(self, old: str, new: str) -> str:
         return self.text.replace(old, new)
