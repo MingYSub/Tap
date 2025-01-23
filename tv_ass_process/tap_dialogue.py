@@ -26,9 +26,9 @@ class TapDialogue:
         return self.text
 
     def text_stripped(self, keep_symbols: bool = False) -> str:
-        CHARS_TO_DELETE = "《》≪≫<>＜＞｟｠〈〉［］→➡⤵️♬⚟⚞📱☎🔊📺🎤"
+        CHARS_TO_DELETE = "《》≪≫<>＜＞｟｠〈〉［］→➡⤵️♪♬⚟⚞📱☎🔊📺🎤"
         REPLACEMENT_DICT = {
-            "\u200e": "",
+            "\u200e": "", 
             "\\N": "",
             "?": "？",
             "!": "！",
