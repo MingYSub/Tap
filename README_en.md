@@ -1,29 +1,29 @@
 # Tap (TV ASS Processor)
 
-处理电视录制的 TS 文件中提取的 ASS 字幕。
+Process ASS subtitles extracted from TS files recorded from TV.
 
-## 功能
+## Features
 
-- ⭐ 合并时间重复行
-- 🔊 去除语气词
-- ⚙️ 输出设置
-  - 支持格式： `txt` `ass` `srt`
-  - 行尾追加字符
-  - 输出说话人
-  - 停顿提示
-- 🔄 全半角转换
-  - 全角英数转为半角
-  - 半角片假名转为全角
-- 📏 日文和西文之间添加空格
-- 🧹 删除多余信息
-  - 去除位置、颜色等信息
-  - 删除未识别的外字
-- ✅ 整理重复音节
-- 📂 批量转换
+- ⭐ Merge duplicate timing lines
+- 🔊 Remove interjections
+- ⚙️ Output Settings
+  - Supported formats: `txt`, `ass`, `srt`
+  - Append characters at the end of lines
+  - Output speaker information
+  - Pause cues
+- 🔄 Full-width and half-width conversion
+  - Convert full-width alphanumerics to half-width
+  - Convert half-width katakana to full-width
+- 📏 Insert spaces between Japanese and Latin characters
+- 🧹 Remove extraneous information
+  - Remove positioning, color, and other similar data
+  - Remove unrecognized foreign characters
+- ✅ Organize duplicate syllables
+- 📂 Batch conversion
 
-## 用法
+## Usage
 
-### 命令行
+### Command-line
 
 ```
 usage: Tap.py [-h] [--conf CONF] [--merge-strategy {none,auto,force}]
@@ -42,22 +42,22 @@ usage: Tap.py [-h] [--conf CONF] [--merge-strategy {none,auto,force}]
               path [path ...]
 ```
 
-注意：
+**Note:**
 
-- 命令行参数会覆盖配置文件设置
-- 默认配置文件路径：`工具目录/config.yaml`
+- Command-line arguments override configuration file settings.
+- Default configuration file path: `tool-directory/config.yaml`
 
 ### Windows GUI
 
-暂无
+Not available.
 
-## 配置文件
+## Configuration File
 
-请见 [config.yaml](./config.yaml)
+Refer to [config.yaml](./config.yaml).
 
-## 样例
+## Example
 
-### 原文（节选）
+### Original Text (Excerpt)
 
 ```
 Dialogue: 0,0:08:07.37,0:08:10.44,Default,,0,0,0,,{\pos(340,1018)\c&H00ffff&}お父さんがいっぱいだー！\N
@@ -79,7 +79,7 @@ Dialogue: 0,0:08:35.56,0:08:38.06,Default,,0,0,0,,{\pos(580,1018)}シャッフ�
 Dialogue: 0,0:08:38.06,0:08:41.13,Default,,0,0,0,,{\pos(420,1018)}<当ててくれないと傷つくぞ>\N
 ```
 
-### 处理后文本（默认设置）
+### Processed Text (Default Settings)
 
 ```
 お父さんがいっぱいだー！
@@ -96,6 +96,6 @@ Dialogue: 0,0:08:38.06,0:08:41.13,Default,,0,0,0,,{\pos(420,1018)}<当ててく�
 当ててくれないと傷つくぞ
 ```
 
-## 开源许可
+## License
 
-本项目使用 [MIT](./LICENSE) 作为开源许可证。
+This project is licensed under the [MIT](./LICENSE) license.

@@ -1,0 +1,35 @@
+# Line merging strategy (options: none, auto, force)
+merge_strategy: auto 
+
+filter_interjections: true
+
+output:
+#  dir: path/to/output
+  format: txt             # options: txt, srt, ass
+  ending: ""              # characters added to the end of the sentence
+  show_speaker: false     # include speaker's name
+  show_pause_tip: 0       # minimal pause seconds, set to 0 to disable. only available for txt format
+
+# Character width conversion rules
+full_half_conversion:
+  numbers: half           # options: skip, half, full, single_full
+  letters: half           # options: skip, half, full, single_full
+  convert_half_katakana: true
+
+# Spacing between CJK and Western characters
+cjk_spacing:
+  enabled: false
+  space_char: "\u2006"
+
+# Repeated syllable handling
+repetition_adjustment:
+  enabled: true
+  connector: "… "
+
+mapping:
+  text:
+    "！！": "!!"
+    "！？": "!?"
+#  regex:
+#    "(?<=example)[TAP]+(ASS)": "\\1"  # This is an example
+
