@@ -170,7 +170,7 @@ class Processor:
                 if event.color not in speaker_record or speaker and speaker not in speaker_record[event.color]:
                     logger.debug(f"Speaker found for {event.color}: {speaker}")
                 speaker_record[event.color].add(speaker or "")
-                speaker = event.color.to_ass_color()
+                speaker = event.color.to_ass_string()
             else:
                 # Set the speaker based on parentheses or coordinates
                 text = event.text

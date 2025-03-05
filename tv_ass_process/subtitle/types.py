@@ -4,12 +4,21 @@ from itertools import takewhile
 
 class Timecode(int):
     def __new__(cls, time: str | int):
-        if isinstance(time, str):
-            h, m, s = map(float, time.split(':'))
-            time = int((h * 3600 + m * 60 + s) * 1000)
-        elif not isinstance(time, int):
-            raise TypeError("Unsupported type")
-        return super().__new__(cls, time)
+        if isinstance(time, int):
+            return super().__new__(cls, time)
+
+        if ":" in time and "." in time:
+            hours, minutes, seconds_ms = time.split(":")
+            seconds, milliseconds = seconds_ms.split(".")
+            total_ms = (
+                    int(hours) * 3600000 +
+                    int(minutes) * 60000 +
+                    int(seconds) * 1000 +
+                    int(milliseconds)
+            )
+            return super().__new__(cls, total_ms)
+
+        raise ValueError(f"Invalid time format: {time}")
 
     def __repr__(self):
         return f"Timecode({int(self)})"
@@ -18,20 +27,16 @@ class Timecode(int):
         return self.to_ass_string()
 
     def to_ass_string(self) -> str:
-        ms = max(0, self)
-        ms = int(round(ms))
-        h, ms = divmod(ms, 3600000)
-        m, ms = divmod(ms, 60000)
-        s, ms = divmod(ms, 1000)
-        return f"{h:01d}:{m:02d}:{s:02d}.{ms:03d}"[:-1]
+        total_seconds, milliseconds = divmod(self, 1000)
+        total_minutes, seconds = divmod(total_seconds, 60)
+        hours, minutes = divmod(total_minutes, 60)
+        return f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}"[:-1]
 
     def to_srt_string(self) -> str:
-        ms = max(0, self)
-        ms = int(round(ms))
-        h, ms = divmod(ms, 3600000)
-        m, ms = divmod(ms, 60000)
-        s, ms = divmod(ms, 1000)
-        return f"{h:02d}:{m:02d}:{s:02d},{ms:03d}"
+        total_seconds, milliseconds = divmod(self, 1000)
+        total_minutes, seconds = divmod(total_seconds, 60)
+        hours, minutes = divmod(total_minutes, 60)
+        return f"{hours:02d}:{minutes:02d}:{seconds:02d},{milliseconds:03d}"
 
 
 @dataclass(frozen=True)
@@ -58,8 +63,8 @@ class Color:
         b = (value >> 16) & 0xFF
         return cls(r, g, b)
 
-    def to_ass_color(self):
+    def to_ass_string(self):
         return f"&H{self.b:02X}{self.g:02X}{self.r:02X}&"
 
     def __repr__(self):
-        return f"Color({self.to_ass_color()})"
+        return f"Color({self.to_ass_string()})"
