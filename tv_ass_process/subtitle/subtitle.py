@@ -33,7 +33,7 @@ class Subtitle:
         lines = ass_text.splitlines()
         for line in lines:
             if line.startswith("Dialogue:"):
-                doc.events.append(Dialog.parse(line))
+                doc.events.append(Dialog.parse_ass_dialog(line))
             elif "ResX:" in line:
                 try:
                     doc.res_x = int(re.search(r"ResX: ?(\d+)", line).group(1))

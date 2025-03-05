@@ -11,7 +11,7 @@ logger = logging.getLogger("Tap")
 
 
 @dataclass
-class Dialog(dict):
+class Dialog:
     start: Timecode
     end: Timecode
     style: str
@@ -21,7 +21,7 @@ class Dialog(dict):
     color: Color = Color(255, 255, 255)
 
     @classmethod
-    def parse(cls, line):
+    def parse_ass_dialog(cls, line: str) -> "Dialog":
         splits = line.split(",", 9)
 
         start = Timecode(splits[1].strip())
@@ -60,10 +60,10 @@ class Events(list[Dialog]):
         for i in sorted(index, reverse=True):
             super().pop(i)
 
-    def to_ass_string(self, show_speaker: bool = False, ending_char: str = ""):
+    def to_ass_string(self, show_speaker: bool = False, ending_char: str = "") -> str:
         return "\n".join(l.to_ass_string(show_speaker, ending_char) for l in self)
 
-    def to_srt_string(self, show_speaker: bool = False, ending_char: str = ""):
+    def to_srt_string(self, show_speaker: bool = False, ending_char: str = "") -> str:
         result = []
         for i, line in enumerate(self):
             result.append(
