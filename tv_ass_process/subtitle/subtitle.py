@@ -3,6 +3,7 @@ import re
 from pathlib import Path
 
 from .events import Dialog, Events
+from .types import Timecode, Position, Color
 from ..config import OutputSettings
 from ..constants import ASS_HEADER
 
@@ -13,6 +14,8 @@ __all__ = [
 ]
 
 logger = logging.getLogger("Tap")
+
+OVERRIDE_BLOCK_PATTERN = re.compile(r"(?<!\\){([^}]*)}")
 
 
 class Subtitle:
@@ -29,11 +32,38 @@ class Subtitle:
 
     @classmethod
     def from_ass_text(cls, ass_text: str) -> "Subtitle":
+        def parse_ass_dialog(line: str) -> "Dialog":
+            splits = line.split(",", 9)
+
+            start = Timecode(splits[1].strip())
+            end = Timecode(splits[2].strip())
+            style = splits[3].strip()
+            name = splits[4].strip()
+            text = splits[9].strip().removesuffix("\\N")
+
+            if "\\fscx50\\fscy50" in text:
+                style = "Rubi"
+
+            pos_match = re.search(r"\\pos\((\d+),(\d+)\)", text)
+            if pos_match:
+                pos = Position(*map(int, pos_match.groups()))
+            else:
+                pos = Position(0, 0)
+                logger.warning(f"No position found in line: {text}")
+
+            text = re.sub(r"{([^}]*)\\c&[0-9a-fhA-FH]([^}]*)}(\s*{\\c&[0-9a-fhA-FH][^}]*})", r"{\1\2}\3", text)
+            color_match = re.search(r"\\c([&hH0-9a-fA-F]+?)(?=[\\}])", text)
+            color = Color.parse(color_match.group(1)) if color_match else Color(255, 255, 255)
+
+            text = OVERRIDE_BLOCK_PATTERN.sub("", text)
+
+            return Dialog(start, end, style, text, name, pos, color)
+
         doc = cls()
         lines = ass_text.splitlines()
         for line in lines:
             if line.startswith("Dialogue:"):
-                doc.events.append(Dialog.parse_ass_dialog(line))
+                doc.events.append(parse_ass_dialog(line))
             elif "ResX:" in line:
                 try:
                     doc.res_x = int(re.search(r"ResX: ?(\d+)", line).group(1))
