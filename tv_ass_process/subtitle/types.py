@@ -14,7 +14,7 @@ class Timecode(int):
                     int(hours) * 3600000 +
                     int(minutes) * 60000 +
                     int(seconds) * 1000 +
-                    int(milliseconds)
+                    int(milliseconds.ljust(3, "0"))
             )
             return super().__new__(cls, total_ms)
 
