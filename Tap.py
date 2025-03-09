@@ -8,10 +8,6 @@ from tv_ass_process.config import ProcessingConfig, ConversionStrategy, OutputFo
 from tv_ass_process.processor import Processor
 
 logger = logging.getLogger("Tap")
-logger.setLevel(logging.INFO)
-consoleHandler = logging.StreamHandler()
-consoleHandler.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
-logger.addHandler(consoleHandler)
 
 
 def main():
@@ -105,13 +101,16 @@ def merge_config(config: ProcessingConfig, override: dict) -> ProcessingConfig:
 
 def process_paths(paths: list[Path], config: ProcessingConfig):
     processor = Processor(config)
-    for path in paths:
-        if path.is_dir():
-            for p in path.glob("*.ass"):
-                if p.is_file() and not p.name.endswith("_processed.ass") :
-                    processor(p)
-        else:
-            processor(path)
+    ass_files = sorted(set(p for path in paths for p in (path.glob("*.ass") if path.is_dir() else [path]) if
+                           p.is_file() and not p.name.endswith("_processed.ass")))
+    total_files = len(ass_files)
+    total_files_width = len(str(total_files))
+    processed_count = 0
+
+    for file in ass_files:
+        processed_count += 1
+        print(f"\rProcessing: [{processed_count:0{total_files_width}}/{total_files}] {file.stem}")
+        processor(file)
 
 
 if __name__ == "__main__":
