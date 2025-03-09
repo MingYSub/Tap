@@ -1,4 +1,4 @@
-SCRIPT_VERSION = "v1.0.0"
+SCRIPT_VERSION = "v1.0.1"
 GITHUB_LINK = "https://github.com/MingYSub/Tap"
 
 ASS_HEADER = (
