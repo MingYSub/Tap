@@ -53,24 +53,22 @@ def convert_half_full_letters(text, strategy: ConversionStrategy = ConversionStr
     return convert_half_full_chars(text, TransMap.FULL_HALF_LETTER_MAP, TransMap.HALF_FULL_LETTER_MAP, strategy)
 
 
-def is_cjk_char(text: str) -> bool:
-    return all(any(start <= ord(char) <= end for start, end in CJK_RANGES) for char in text)
+def fix_western_text(text: str) -> str:
+    def replace(match):
+        western_text = match.group(2).replace("\u3000", " ").replace("！", "!").replace("？", "?")
+        return match.group(1) + western_text + match.group(3)
 
-
-def is_an_char(text: str) -> bool:
-    return all(any(start <= ord(char) <= end for start, end in AN_RANGES) for char in text)
-
-
-def replace_spaces_between_an(text: str) -> str:
-    word_list = text.split("\u3000")
-
-    for i in range(1, len(word_list)):
-        word_list[i - 1] += (" " if is_an_char(word_list[i - 1]) and is_an_char(word_list[i]) else "\u3000")
-
-    return "".join(word_list)
+    text = re.sub(r"(^|\u3000)([0-9a-zA-Z？！\u3000]*)($|\u3000)", replace, text)
+    return text
 
 
 def cjk_spacing(text, space="\u2006") -> str:
+    def is_cjk_char(text: str) -> bool:
+        return all(any(start <= ord(char) <= end for start, end in CJK_RANGES) for char in text)
+
+    def is_an_char(text: str) -> bool:
+        return all(any(start <= ord(char) <= end for start, end in AN_RANGES) for char in text)
+
     result = []
     last_char_type = "NULL"
     for char in text:

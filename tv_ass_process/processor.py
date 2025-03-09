@@ -133,6 +133,10 @@ class Processor:
                 event.text = re.sub(pattern, replacement, event.text)
         logger.info(f"Finished custom text replacements")
 
+        for event in doc.events:
+            event.text = fix_western_text(event.text)
+        logger.info("Fixed western text formatting")
+
         logger.info("Subtitle processing completed successfully")
 
     @staticmethod
