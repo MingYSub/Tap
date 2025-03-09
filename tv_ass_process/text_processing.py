@@ -62,27 +62,30 @@ def fix_western_text(text: str) -> str:
     return text
 
 
-def cjk_spacing(text, space="\u2006") -> str:
-    def is_cjk_char(text: str) -> bool:
-        return all(any(start <= ord(char) <= end for start, end in CJK_RANGES) for char in text)
+def cjk_spacing(text: str, space: str = "\u2006") -> str:
+    def is_cjk_char(ch: str) -> bool:
+        return any(start <= ord(ch) <= end for start, end in CJK_RANGES)
 
-    def is_an_char(text: str) -> bool:
-        return all(any(start <= ord(char) <= end for start, end in AN_RANGES) for char in text)
+    def is_an_char(ch: str) -> bool:
+        return any(start <= ord(ch) <= end for start, end in AN_RANGES)
 
+    an_exclude = "!?.,~"
     result = []
-    last_char_type = "NULL"
+    last_cjk = False
+    last_an = False
+
     for char in text:
-        if is_cjk_char(char):
-            if last_char_type == "AN":
-                result.append(space)
-            last_char_type = "CJK"
-        elif is_an_char(char):
-            if last_char_type == "CJK":
-                result.append(space)
-            last_char_type = "AN"
-        else:
-            last_char_type = "NULL"
+        current_cjk = is_cjk_char(char)
+        current_an = is_an_char(char)
+
+        if last_an and current_cjk:
+            result.append(space)
+        elif last_cjk and current_an and char not in an_exclude:
+            result.append(space)
+
         result.append(char)
+        last_cjk, last_an = current_cjk, current_an
+
     return "".join(result)
 
 
