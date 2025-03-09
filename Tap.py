@@ -1,10 +1,17 @@
 import argparse
+import logging
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
 from tv_ass_process.config import ProcessingConfig, ConversionStrategy, OutputFormat, MergeStrategy
 from tv_ass_process.processor import Processor
+
+logger = logging.getLogger("Tap")
+logger.setLevel(logging.INFO)
+consoleHandler = logging.StreamHandler()
+consoleHandler.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
+logger.addHandler(consoleHandler)
 
 
 def main():
