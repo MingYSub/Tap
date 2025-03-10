@@ -99,11 +99,16 @@ class Processor:
         logger.info("Assigned speakers")
 
         for event in doc.events:
-            event.text = remove_line_markers(event.text)
+            event.text = remove_line_markers(event.text).strip()
+            for marker in AUDIO_MARKERS:
+                event.text = event.text.removeprefix(marker).strip()
             if event.text.startswith("（") and "）" in event.text:
                 event.text = event.text[event.text.index("）") + 1:]
             elif not event.name.startswith("Unknown"):
                 event.text = event.text.removeprefix(event.name + "：").removeprefix(event.name + "≫")
+            for marker in AUDIO_MARKERS:
+                event.text = event.text.removeprefix(marker)
+            event.text = remove_line_markers(event.text).strip()
         self.filter_empty_lines(doc)
         logger.info("Cleaned up text")
 
