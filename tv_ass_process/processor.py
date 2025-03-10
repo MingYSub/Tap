@@ -74,8 +74,8 @@ class Processor:
         doc.events.pop(del_list)
         logger.info(f"Removed {len(del_list)} Rubi events")
 
-        raw = "．％／＆＋－＝･“”(): ｡。"
-        converted = ".%/&+-=・「」（）：\u3000\u3000\u3000"
+        raw = "．％／＆＋－＝･“”(): ｡。、"
+        converted = ".%/&+-=・「」（）：\u3000\u3000\u3000\u3000"
         trans = str.maketrans(raw, converted)
         for event in doc.events:
             event.text = convert_half_full_numbers(event.text, self.config.full_half_conversion.numbers)
