@@ -18,8 +18,8 @@ class Dialog:
     color: Color = Color(255, 255, 255)
 
     def to_ass_string(self, actor: bool = False, ending_char: str = "") -> str:
-        return f"Dialogue: 0,{self.start},{self.end},JP,{self.name if actor else ""}" \
-               f",0,0,0,,{self.text.replace("\n", "\\N") + ending_char}"
+        return (f"Dialogue: 0,{self.start},{self.end},JP,{self.name if actor else ''},0,0,0,," +
+                self.text.replace("\n", "\\N") + ending_char)
 
 
 class Events(list[Dialog]):
