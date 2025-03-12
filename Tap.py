@@ -7,17 +7,33 @@ from typing import Any
 from tv_ass_process.config import ProcessingConfig, ConversionStrategy, OutputFormat, MergeStrategy
 from tv_ass_process.processor import Processor
 
-logger = logging.getLogger("Tap")
-
 
 def main():
     parser = argparse.ArgumentParser(description="Process subtitle files")
     parser.add_argument("--conf", type=Path, default=Path(__file__).parent / "config.yaml",
                         help="Configuration file path")
     parser.add_argument("path", nargs="+", type=Path, help="Input files/directories")
+    parser.add_argument("--verbose", action="store_true", help="Enable debug logging")
 
     add_config_arguments(parser)
     args = parser.parse_args()
+
+    logger = logging.getLogger("sub_refine")
+    logger.setLevel(logging.DEBUG)
+
+    console_handler = logging.StreamHandler()
+    formatter = logging.Formatter("[%(asctime)s] %(levelname)s - %(message)s")
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+
+    if args.verbose:
+        console_handler.setLevel(logging.DEBUG)
+        file_handler = logging.FileHandler("Tap.log", encoding="utf-8")
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+    else:
+        console_handler.setLevel(logging.WARNING)
 
     config = ProcessingConfig.from_yaml(args.conf) if args.conf.exists() else ProcessingConfig()
     override_dict = build_override_dict(args)
@@ -44,11 +60,13 @@ def add_config_arguments(parser):
     parser.add_argument("--convert-half-katakana", action=argparse.BooleanOptionalAction, default=None)
 
     # CJKSpacing
-    parser.add_argument("--cjk-spacing", action=argparse.BooleanOptionalAction, dest="cjk_spacing_enabled", default=None)
+    parser.add_argument("--cjk-spacing", action=argparse.BooleanOptionalAction, dest="cjk_spacing_enabled",
+                        default=None)
     parser.add_argument("--cjk-space-char", type=str)
 
     # RepetitionHandling
-    parser.add_argument("--repetition-adjustment", "-r", action=argparse.BooleanOptionalAction, dest="repetition_enabled", default=None)
+    parser.add_argument("--repetition-adjustment", "-r", action=argparse.BooleanOptionalAction,
+                        dest="repetition_enabled", default=None)
     parser.add_argument("--repetition-connector", type=str)
 
 
