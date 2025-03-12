@@ -63,9 +63,10 @@ class Processor:
         path = Path(path)
         doc = Subtitle.load(path)
         self.process_subtitle(doc)
-        output_path = path.with_name(f"{path.stem}_processed.{self.config.output.format}")
+        output_filename = path.with_name(f"{path.stem}_processed.{self.config.output.format}").name
+        output_path = (self.config.output.dir or path.parent) / output_filename
         doc.save(output_path, self.config.output)
-        logger.info(f"Finished processing, saved to {output_path}")
+        logger.info(f"Finished processing. Saved to {output_path}")
 
     def process_subtitle(self, doc: Subtitle) -> None:
         logger.info("Starting subtitle processing...")
