@@ -1,4 +1,4 @@
-SCRIPT_VERSION = "v1.0.1"
+SCRIPT_VERSION = "v1.0.2"
 GITHUB_LINK = "https://github.com/MingYSub/Tap"
 
 ASS_HEADER = (
@@ -10,7 +10,7 @@ ASS_HEADER = (
     "PlayResY: 1080\n\n"
     "[V4+ Styles]\n"
     "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n"
-    "Style: JP,Sarasa Gothic J Semibold,52,&H00FFFFFF,&H00FFFFFF,&H00141414,&H910E0807,0,0,0,0,100,100,0,0,1,1.6,0,2,30,30,15,1\n\n"
+    "Style: Default,Sarasa Gothic J Semibold,52,&H00FFFFFF,&H00FFFFFF,&H00141414,&H910E0807,0,0,0,0,100,100,0,0,1,1.6,0,2,30,30,15,1\n\n"
     "[Events]\n"
     "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
 )
@@ -25,8 +25,7 @@ REPEATED_SYLLABLES = {
     "う": ("嬉", "旨", "上手", "美味", "歌", "嘘", "後", "诗", "宇"),
     "え": ("笑顔",),
     "お": ("同", "美味", "思", "想", "遅", "俺", "温", "重", "起", "落", "大", "終", "男", "女", "面白",),
-    "か": (
-    "彼", "可", "格", "母", "体", "身体", "完", "構", "必", "風", "顔", "考", "軽", "帰", "川", "加", "佳", "華"),
+    "か": ("彼", "可", "格", "母", "体", "身体", "完", "構", "必", "風", "顔", "考", "軽", "帰", "川", "加", "佳", "華"),
     "き": ("貴", "君", "聞", "気", "来", "緊", "切", "昨日", "奇", "決", "喜", "木"),
     "く": ("暗", "食", "熊", "国", "口", "悔", "黒", "久", "狂", "空"),
     "け": ("結", "決"),
@@ -57,7 +56,7 @@ REPEATED_SYLLABLES = {
     "め": ("滅茶", "目", "迷", "珍", "恵"),
     "も": ("桃", "申", "問", "持", "戻"),
     "や": ("優", "安", "奴", "山", "宿", "八"),
-    "ゆ": ("夢", "雪", "由", "有", "優", "唯", "結"),
+    "ゆ": ("夢", "雪", "由", "有", "優", "唯", "結", "許"),
     "よ": ("4", "四", "良", "弱", "宜", "夜"),
     "ら": ("来", "楽", "良", "羅", "裸"),
     "り": ("理", "利", "梨", "六"),
@@ -82,7 +81,7 @@ REPEATED_SYLLABLES = {
     "ど": (),
     "ば": ("馬鹿",),
     "び": (),
-    "ぶ": (),
+    "ぶ": ("文", "部"),
     "べ": ("別",),
     "ぼ": ("僕",),
     "ぱ": (),

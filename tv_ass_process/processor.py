@@ -1,40 +1,58 @@
 import logging
 from collections import defaultdict
 from pathlib import Path
-from typing import overload
+from typing import overload, Sequence
 
-from .config import ProcessingConfig, MergeStrategy
+from .config import ProcessingConfig, MergeStrategy, FullHalfConversion
 from .subtitle import Subtitle, Events
 from .subtitle.types import Color
 from .text_processing import *
 
-logger = logging.getLogger("Tap")
+logger = logging.getLogger(__name__)
 
 WHITE = Color(255, 255, 255)
 
-AUDIO_MARKERS = ("♪♪", "♪", "♬", "⚟", "⚞", "📱", "☎", "🔊", "📢", "📺", "🎤",
-                 "💻", "🎧", "📼", "🖭", "・", "〓", "⎚", "＝", "≫")
-PARENTHESIS_START_MARKERS = ("<", "＜", "《", "｟", "≪", "〈", "［", "（（")
-PARENTHESIS_END_MARKERS = (">", "＞", "》", "｠", "≫", "〉", "］", "））")
-CONTINUOUS_LINE_MARKERS = ("→", "➡", "⤵️", "・")
+AUDIO_MARKERS = ("♪♪", "♪", "♬", "⚟", "⚞", "📱", "☎", "📞", "🔊", "📢", "📺", "🎤"
+                 "💻", "모", "🎧", "📼", "🖭", "・", "〓", "⎚", "＝", "", "≫", ">>")
+PARENTHESIS_START_MARKERS = ("<", "＜", "《", "｟", "≪", "〈", "［", "（（", "⟨")
+PARENTHESIS_END_MARKERS = (">", "＞", "》", "｠", "≫", "〉", "］", "））", "⟩")
+CONTINUOUS_LINE_MARKERS = ("→", "➡", "➨", "⤵️", "➥", "・")
+
+
+def remove_affix(text: str, prefix: Sequence[str] | None = None, suffix: Sequence[str] | None = None) -> str:
+    if prefix is not None:
+        for p in prefix:
+            text = text.removeprefix(p)
+    if suffix is not None:
+        for s in suffix:
+            text = text.removesuffix(s)
+    return text
 
 
 def remove_line_markers(text: str) -> str:
-    for marker in PARENTHESIS_START_MARKERS:
-        text = text.removeprefix(marker)
-    for marker in PARENTHESIS_END_MARKERS:
-        text = text.removesuffix(marker)
-    for marker in CONTINUOUS_LINE_MARKERS:
-        text = text.removesuffix(marker)
-    return text.removeprefix("～")
+    return remove_affix(text, PARENTHESIS_START_MARKERS + ("～",), PARENTHESIS_END_MARKERS + CONTINUOUS_LINE_MARKERS)
 
 
 def guess_same_speaker(event1, event2, x_spacing=60, y_spacing=60) -> bool:
     return (event1.start == event2.start and event1.end == event2.end
             and event1.color == event1.color
             and event1.pos.y and event2.pos.y
-            and abs(event1.pos.x - event2.pos.x) <= x_spacing
-            and abs(event1.pos.y - event2.pos.y) <= y_spacing)
+            and (event1.pos.y == event2.pos.y
+                 or abs(event1.pos.x - event2.pos.x) <= x_spacing
+                 and abs(event1.pos.y - event2.pos.y) <= y_spacing
+                 )
+            )
+
+
+def full_half_conversion(doc: Subtitle, conversion: FullHalfConversion, raw: str = "", converted: str = ""):
+    trans = str.maketrans(raw, converted)
+    for event in doc.events:
+        event.text = convert_half_full_numbers(event.text, conversion.numbers)
+        event.text = convert_half_full_letters(event.text, conversion.letters)
+        event.text = event.text.translate(trans)
+    if conversion.convert_half_katakana:
+        for event in doc.events:
+            event.text = convert_half_katakana(event.text)
 
 
 class Processor:
@@ -56,7 +74,12 @@ class Processor:
         if isinstance(doc_or_path, Subtitle):
             self.process_subtitle(doc_or_path)
         else:
-            self.process_and_save(doc_or_path)
+            try:
+                path = Path(doc_or_path)
+                self.process_and_save(path)
+            except Exception as e:
+                logger.error(f"Error processing file {doc_or_path}: {e}")
+                raise ValueError(f"Error processing file {doc_or_path}: {e}")
 
     def process_and_save(self, path: Path | str) -> None:
         logger.info(f"Starting processing {path}")
@@ -64,7 +87,9 @@ class Processor:
         doc = Subtitle.load(path)
         self.process_subtitle(doc)
         output_filename = path.with_name(f"{path.stem}_processed.{self.config.output.format}").name
-        output_path = (self.config.output.dir or path.parent) / output_filename
+        output_dir = self.config.output.dir or path.parent
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_path = output_dir / output_filename
         doc.save(output_path, self.config.output)
         logger.info(f"Finished processing. Saved to {output_path}")
 
@@ -75,16 +100,9 @@ class Processor:
         doc.events.pop(del_list)
         logger.info(f"Removed {len(del_list)} Rubi events")
 
-        raw = "．％／＆＋－＝･“”(): ｡。、"
-        converted = ".%/&+-=・「」（）：\u3000\u3000\u3000\u3000"
-        trans = str.maketrans(raw, converted)
-        for event in doc.events:
-            event.text = convert_half_full_numbers(event.text, self.config.full_half_conversion.numbers)
-            event.text = convert_half_full_letters(event.text, self.config.full_half_conversion.letters)
-            event.text = event.text.translate(trans)
-        if self.config.full_half_conversion.convert_half_katakana:
-            for event in doc.events:
-                event.text = convert_half_katakana(event.text)
+        raw = "!?．％／＆＋－＝･“”():〜 ｡。"
+        converted = "！？.%/&+-=・「」（）：～\u3000\u3000\u3000"
+        full_half_conversion(doc, self.config.full_half_conversion, raw, converted)
         logger.info("Normalized full-width/half-width characters")
 
         for event in doc.events:
@@ -108,8 +126,9 @@ class Processor:
             elif not event.name.startswith("Unknown"):
                 event.text = event.text.removeprefix(event.name + "：").removeprefix(event.name + "≫")
             for marker in AUDIO_MARKERS:
-                event.text = event.text.removeprefix(marker)
+                event.text = event.text.removeprefix(marker).strip()
             event.text = remove_line_markers(event.text).strip()
+            event.text = re.sub(r"(?<=[？！])(?![\u3000？！」』]|$)", "\u3000", event.text)
         self.filter_empty_lines(doc)
         logger.info("Cleaned up text")
 
@@ -237,4 +256,4 @@ class Processor:
 
     @staticmethod
     def filter_empty_lines(doc: Subtitle) -> None:
-        doc.events = Events(event for event in doc.events if event.text)
+        doc.events = Events(event for event in doc.events if event.text not in ("", "～"))

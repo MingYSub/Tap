@@ -1,6 +1,9 @@
+import logging
 from dataclasses import dataclass, field, fields, is_dataclass
 from enum import Enum, StrEnum
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 def dict_to_dataclass(cls, data: dict):
@@ -75,10 +78,12 @@ class RepetitionHandling:
     enabled: bool = True
     connector: str = "… "  # String to connect repeated syllables
 
+
 @dataclass
 class Mapping:
     text: dict[str, str] = field(default_factory=dict)
     regex: dict[str, str] = field(default_factory=dict)
+
 
 @dataclass
 class ProcessingConfig:

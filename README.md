@@ -1,55 +1,80 @@
 # Tap (TV ASS Processor)
 
+**该项目已停止维护，请移步 [SubsRefine](https://github.com/MingYSub/SubsRefine)。**
+
 处理电视录制的 TS 文件中提取的 ASS 字幕。
 
 ## 功能
 
-- ⭐ 合并时间重复行
-- 🔊 去除语气词
-- ⚙️ 输出设置
+- 合并时间重复行
+- 去除语气词
+- 输出设置
   - 支持格式： `txt` `ass` `srt`
   - 行尾追加字符
   - 输出说话人
   - 停顿提示
-- 🔄 全半角转换
+- 全半角转换
   - 全角英数转为半角
   - 半角片假名转为全角
-- 📏 日文和西文之间添加空格
-- 🧹 删除多余信息
+- 日文和西文之间添加空格
+- 删除多余信息
   - 去除位置、颜色等信息
   - 删除未识别的外字
-- ✅ 整理重复音节
-- 📂 批量转换
+- 整理重复音节
+- 批量转换
 
 ## 用法
 
-### 命令行
-
 ```
-usage: Tap.py [-h] [--conf CONF] [--merge-strategy {none,auto,force}]
-              [--filter-interjections | --no-filter-interjections | -fi]
-              [--output-dir OUTPUT_DIR] [--output-format {txt,srt,ass}]
-              [--output-ending OUTPUT_ENDING]
-              [--show-speaker | --no-show-speaker | -a]
-              [--show-pause-tip SHOW_PAUSE_TIP]
-              [--full-half-numbers {skip,half,full,single_full}]
-              [--full-half-letters {skip,half,full,single_full}]
-              [--convert-half-katakana | --no-convert-half-katakana]
-              [--cjk-spacing | --no-cjk-spacing]
-              [--cjk-space-char CJK_SPACE_CHAR]
-              [--repetition-adjustment | --no-repetition-adjustment | -r]
+usage: Tap.py [-h] [--conf CONF] [--verbose] [-m {none,auto,force}] [-i] [-I] [-o OUTPUT_DIR] [-f {txt,srt,ass}]
+              [-e OUTPUT_ENDING] [-s] [-S] [-p SHOW_PAUSE_TIP] [--numbers {skip,half,full,single_full}]
+              [--letters {skip,half,full,single_full}] [-k] [-K] [-c] [-C] [--cjk-space-char CJK_SPACE_CHAR] [-r] [-R]
               [--repetition-connector REPETITION_CONNECTOR]
               path [path ...]
+
+Tap v1.0.2 | TV ASS Processor
+
+positional arguments:
+  path                  Input files/directories
+
+options:
+  -h, --help            show this help message and exit
+  --conf CONF           Configuration file path
+  --verbose             Enable debug logging
+  -m {none,auto,force}, --merge-strategy {none,auto,force}
+                        Strategy for merging overlapping time-aligned lines
+  -i                    Enable interjection filtering
+  -I                    Disable interjection filtering
+  -o OUTPUT_DIR, --output-dir OUTPUT_DIR
+                        Directory to store output files
+  -f {txt,srt,ass}, --output-format {txt,srt,ass}
+                        Output file format (e.g., txt, srt, json)
+  -e OUTPUT_ENDING, --output-ending OUTPUT_ENDING
+                        String to append at the end of each line
+  -s                    Enable speaker name display
+  -S                    Disable speaker name display
+  -p SHOW_PAUSE_TIP, --show-pause-tip SHOW_PAUSE_TIP
+                        Show pause tip if pause exceeds this duration (in milliseconds)
+  --numbers {skip,half,full,single_full}
+                        Conversion strategy for full-width/half-width numbers
+  --letters {skip,half,full,single_full}
+                        Conversion strategy for full-width/half-width letters
+  -k                    Enable conversion of half-width katakana to full-width
+  -K                    Disable conversion of half-width katakana to full-width
+  -c                    Enable automatic spacing between CJK and latin characters
+  -C                    Disable automatic spacing between CJK and latin characters
+  --cjk-space-char CJK_SPACE_CHAR
+                        Custom space character to insert between CJK and latin characters
+  -r                    Enable adjustment of repeated phrases
+  -R                    Disable adjustment of repeated phrases
+  --repetition-connector REPETITION_CONNECTOR
+                        Connector used between repeated syllables
 ```
 
 注意：
 
 - 命令行参数会覆盖配置文件设置
 - 默认配置文件路径：`工具目录/config.yaml`
-
-### Windows GUI
-
-暂无
 
 ## 配置文件
 

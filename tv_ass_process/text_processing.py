@@ -32,16 +32,18 @@ def convert_half_katakana(text) -> str:
 
 
 def convert_half_full_chars(text, full_half_mapping, half_full_mapping, strategy) -> str:
-    if strategy == ConversionStrategy.SKIP:
-        return text
-    elif strategy == ConversionStrategy.HALF:
-        return text.translate(full_half_mapping)
-    elif strategy == ConversionStrategy.FULL:
-        return text.translate(half_full_mapping)
-    elif strategy == ConversionStrategy.SINGLE_FULL:
-        text = text.translate(full_half_mapping)
-        text = re.sub(r"(?<!\d)(\d)(?!\d)", lambda m: m[1].translate(half_full_mapping), text)
-        return text
+    match strategy:
+        case ConversionStrategy.SKIP:
+            return text
+        case ConversionStrategy.HALF:
+            return text.translate(full_half_mapping)
+        case ConversionStrategy.FULL:
+            return text.translate(half_full_mapping)
+        case ConversionStrategy.SINGLE_FULL:
+            text = text.translate(full_half_mapping)
+            text = re.sub(r"(?<!\d)(\d)(?!\d)", lambda m: m[1].translate(half_full_mapping), text)
+            text = re.sub(r"(?<![a-zA-Z])([a-zA-Z])(?![a-zA-Z])", lambda m: m[1].translate(half_full_mapping), text)
+            return text
     raise ValueError(f"Invalid conversion strategy: {strategy}")
 
 
@@ -55,8 +57,8 @@ def convert_half_full_letters(text, strategy: ConversionStrategy = ConversionStr
 
 def fix_western_text(text: str) -> str:
     def replace(match):
-        western_text = match.group(2).replace("\u3000", " ").replace("！", "!").replace("？", "?")
-        return match.group(1) + western_text + match.group(3)
+        return match.group(1) + match.group(2).replace("\u3000", " ").replace("！", "!").replace("？", "?") + match.group(
+            3)
 
     text = re.sub(r"(^|\u3000)([0-9a-zA-Z？！\u3000]*)($|\u3000)", replace, text)
     return text
@@ -89,20 +91,9 @@ def cjk_spacing(text: str, space: str = "\u2006") -> str:
     return "".join(result)
 
 
-def clean_up_text(text) -> str:
-    text = re.sub(r"{[^}]+}", "", text)  # 去除tag
-    text = re.sub(r"\([^)]+\)", "", text)  # 去除括号
-    text = re.sub(r"\[[^]]+]", "", text)  # 去除外字
-    # 去除冒号说话人
-    if "：" in text and text.index("：") < 8:
-        text = text[text.index("：") + 1:]
-    return text
-
-
 def filter_interjections(text) -> str:
-    TRASH_STR = ["", "\u3000", "あん", "うえぇん", "うっわ", "くぅ", "くぅん", "ぐぬ", "ぐぬぅ", "ぐふ", "すぅ", "ぜぇ",
-                 "ぬぁ", "ぬおおお", "はぁ", "ウーム", "ふぐ", "むふ", "ん", "んあ", "んぐぐ", "んはは", "んん",
-                 "んんぃ", "ぬあ", "クックックッ", "ゲコ", "どわ", "はむ", ]
+    if not text:
+        return ""
 
     TRASH_RE = [
         r"[ウフブ][ゥウッフプンー]+",
@@ -125,19 +116,23 @@ def filter_interjections(text) -> str:
         r"[ほホ](ふ[ぅゥ]*|[ぅゥ]+)",
     ]
 
-    TRASH_SINGLE = ["あ", "あぁ", "う", "お", "く", "ぐ", "ぬ", "は", "ひ", "ふ", "ぶ", "へ", "ほ", "わ", "げ", "ひゃ",
-                    "ウ", "ハ", "ヒ", "フ", "ク", "ン", ]
+    TRASH_STR = {"", "\u3000", "あん", "うえぇん", "うっわ", "くぅ", "くぅん", "ぐぬ", "ぐぬぅ", "ぐふ", "すぅ", "ぜぇ",
+                 "ぬぁ", "ぬおおお", "はぁ", "ウーム", "ふぐ", "むふ", "ん", "んあ", "んぐぐ", "んはは", "んん",
+                 "んんぃ", "ぬあ", "クックックッ", "ゲコ", "どわ", "はむ", }
 
-    text = re.sub(r"(？！|！？|[？！\n])", r"\1　", text).strip("\u3000 ")
+    TRASH_SINGLE = {"あ", "あぁ", "う", "お", "く", "ぐ", "ぬ", "は", "ひ", "ふ", "ぶ", "へ", "ほ", "わ", "げ", "ひゃ",
+                    "ウ", "ハ", "ヒ", "フ", "ク", "ン", }
+
+    cleanup_pattern = re.compile(r"[！？…～っッ]")
+    compiled_trash_re = [re.compile(pattern) for pattern in TRASH_RE]
+
     elements = text.split("\u3000")
-    test_case = list(re.sub("[！？…～っッ]", "", element) for element in elements)
+
+    test_case = [cleanup_pattern.sub("", element) for element in elements]
     trash_flag = [
-        (
-            1 if single in TRASH_SINGLE
-            else 2 if single in TRASH_STR
-            else 3 if any(re.fullmatch(pattern, single) for pattern in TRASH_RE)
-            else 0
-        )
+        1 if single in TRASH_SINGLE
+        else 2 if single in TRASH_STR or any(pattern.fullmatch(single) for pattern in compiled_trash_re)
+        else 0
         for single in test_case
     ]
 
@@ -145,12 +140,12 @@ def filter_interjections(text) -> str:
         return ""
 
     # Filter interjections at the beginning and end
-    del_list = [index for index, value in enumerate(trash_flag) if value == 2 or value == 3]
-    for index in reversed(
-            [del_i for i, del_i in enumerate(del_list) if i == del_i or len(del_list) - i == len(elements) - del_i]):
-        elements.pop(index)
-    text = re.sub(r"([？！\n])\u3000", r"\1", "\u3000".join(elements))
-    return text
+    del_list = [index for index, value in enumerate(trash_flag) if value == 2]
+    delta = len(elements) - len(del_list)
+    elements = [element for index, element in enumerate(elements) if index not in
+                {del_i for i, del_i in enumerate(del_list) if i == del_i or del_i - i == delta}]
+
+    return "\u3000".join(elements)
 
 
 def adjust_repeated_syllables(text, connector: str = "… ") -> str:

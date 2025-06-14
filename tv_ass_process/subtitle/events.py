@@ -4,22 +4,22 @@ from dataclasses import dataclass
 
 from .types import Timecode, Position, Color
 
-logger = logging.getLogger("Tap")
+logger = logging.getLogger(__name__)
 
 
 @dataclass
 class Dialog:
     start: Timecode
     end: Timecode
-    style: str
     text: str
+    style: str = "Default"
     name: str = ""
-    pos: Position = Position(0, 0)
-    color: Color = Color(255, 255, 255)
+    pos: Position | None = None
+    color: Color | None = None
 
     def to_ass_string(self, actor: bool = False, ending_char: str = "") -> str:
-        return (f"Dialogue: 0,{self.start},{self.end},JP,{self.name if actor else ''},0,0,0,," +
-                self.text.replace("\n", "\\N") + ending_char)
+        return f"Dialogue: 0,{self.start},{self.end},Default,{self.name if actor else ''},0,0,0,," +\
+            self.text.replace('\n', '\\N') + ending_char
 
 
 class Events(list[Dialog]):

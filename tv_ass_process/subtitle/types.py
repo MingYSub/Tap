@@ -53,11 +53,11 @@ class Color:
 
     @classmethod
     def parse(cls, color_str: str):
-        color_str = color_str.lstrip("&H").lstrip(" \t").upper()
+        color_str = color_str.upper().lstrip("&H").lstrip(" \t")
         color_str = "".join(takewhile(lambda x: x in "0123456789ABCDEF", color_str))
         value = int(color_str, 16)
-        if value < 0 or value > 0xFFFFFF:
-            return 255, 255, 255
+        if value > 0xFFFFFF:
+            return cls(255, 255, 255)
         r = value & 0xFF
         g = (value >> 8) & 0xFF
         b = (value >> 16) & 0xFF

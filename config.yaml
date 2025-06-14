@@ -1,19 +1,19 @@
 # Line merging strategy (options: none, auto, force)
-merge_strategy: auto 
+merge_strategy: auto
 
 filter_interjections: true
 
 output:
 #  dir: path/to/output
-  format: txt             # options: txt, srt, ass
-  ending: ""              # characters added to the end of the sentence
-  show_speaker: false     # include speaker's name
-  show_pause_tip: 0       # minimal pause seconds, set to 0 to disable. only available for txt format
+  format: txt             # Options: txt, srt, ass
+  ending: ''              # Characters added to the end of the sentence
+  show_speaker: false     # Includes speaker's name
+  show_pause_tip: 0       # Minimal pause seconds. Set to 0 to disable. Only available when outputting txt
 
 # Character width conversion rules
 full_half_conversion:
-  numbers: half           # options: skip, half, full, single_full
-  letters: half           # options: skip, half, full, single_full
+  numbers: half           # Options: skip, half, full, single_full
+  letters: half           # Options: skip, half, full, single_full
   convert_half_katakana: true
 
 # Spacing between CJK and Western characters
@@ -22,14 +22,21 @@ cjk_spacing:
   space_char: "\u2006"
 
 # Repeated syllable handling
+# e.g. きょ… 今日は…
 repetition_adjustment:
   enabled: true
-  connector: "… "
+  connector: '… '
 
 mapping:
   text:
-    "！！": "!!"
-    "！？": "!?"
-#  regex:
-#    "(?<=example)[TAP]+(ASS)": "\\1"  # This is an example
+    '！！': '!!'
+    '？！': '?!'
+    '！？': '!?'
+#    '美味し': 'おいし'
+#    '可愛い': 'かわいい'
+#    '可愛く': 'かわいく'
+#    '取りあえず': 'とりあえず'
 
+#  regex:
+#    '(?<=\d)[,，][ 　]?(?=\d{3}([^\d]|$))': ''  # Remove comma in numbers
+#    '[ヶケヵカ](?=[月所])': 'か'

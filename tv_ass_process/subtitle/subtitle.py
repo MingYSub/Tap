@@ -7,13 +7,13 @@ from .types import Timecode, Position, Color
 from ..config import OutputSettings
 from ..constants import ASS_HEADER
 
-__all__ = [
+__all__ = (
     "Subtitle",
     "load",
     "from_ass_text",
-]
+)
 
-logger = logging.getLogger("Tap")
+logger = logging.getLogger(__name__)
 
 OVERRIDE_BLOCK_PATTERN = re.compile(r"(?<!\\){([^}]*)}")
 
@@ -27,29 +27,24 @@ class Subtitle:
     @classmethod
     def load(cls, path: Path | str, encoding: str = "utf-8") -> "Subtitle":
         path = Path(path)
-        with path.open("r", encoding=encoding) as f:
-            return cls.from_ass_text(f.read())
+        return cls.from_ass_text(path.open("r", encoding=encoding).read())
 
     @classmethod
-    def from_ass_text(cls, ass_text: str) -> "Subtitle":
-        def parse_ass_dialog(line: str) -> "Dialog":
+    def from_ass_text(cls, text: str) -> "Subtitle":
+        def parse_ass_dialog(line: str) -> Dialog:
             splits = line.split(",", 9)
 
             start = Timecode(splits[1].strip())
             end = Timecode(splits[2].strip())
             style = splits[3].strip()
             name = splits[4].strip()
-            text = splits[9].strip().removesuffix("\\N")
+            text = splits[9].replace("\\N", "\n").strip()
 
             if "\\fscx50\\fscy50" in text:
                 style = "Rubi"
 
             pos_match = re.search(r"\\pos\((\d+),(\d+)\)", text)
-            if pos_match:
-                pos = Position(*map(int, pos_match.groups()))
-            else:
-                pos = Position(0, 0)
-                logger.warning(f"No position found in line: {text}")
+            pos = Position(*map(int, pos_match.groups())) if pos_match else Position(0, 0)
 
             text = re.sub(r"{([^}]*)\\c&[0-9a-fhA-FH]([^}]*)}(\s*{\\c&[0-9a-fhA-FH][^}]*})", r"{\1\2}\3", text)
             color_match = re.search(r"\\c([&hH0-9a-fA-F]+?)(?=[\\}])", text)
@@ -57,10 +52,10 @@ class Subtitle:
 
             text = OVERRIDE_BLOCK_PATTERN.sub("", text)
 
-            return Dialog(start, end, style, text, name, pos, color)
+            return Dialog(start, end, text, style, name, pos, color)
 
         doc = cls()
-        lines = ass_text.splitlines()
+        lines = text.strip().splitlines()
         for line in lines:
             if line.startswith("Dialogue:"):
                 doc.events.append(parse_ass_dialog(line))
